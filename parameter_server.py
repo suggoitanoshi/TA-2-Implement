@@ -121,7 +121,7 @@ class BatchUpdateParameterServer(object):
         with self.lock:
             if data != None:
                 timed_log(f'PS got update from trainer{worker+1}')
-                self.grad[worker] = data
+                self.grad[worker] = data['grad']
             self.curr_update_size += 1
             if self.curr_update_size >= self.batch_update_size:
                 self.update_logic(fut)

@@ -20,8 +20,9 @@ class EfficientAdamTrainer(Trainer):
             self.momentum_dict[f'error_{layer}'] = 0
 
     def train_pre_batch(self, i, model_fresh, inputs, labels):
-        loss, grad = super().train_pre_batch(
+        loss, data = super().train_pre_batch(
             i=i, model_fresh=model_fresh, inputs=inputs, labels=labels)
+        grad = data['grad']
         delta = []
         for layer, p in enumerate(self.model_old.parameters()):
             v = self.beta_2 * \
@@ -40,11 +41,11 @@ class EfficientAdamTrainer(Trainer):
     def train(self):
         return super().train(retrieve_model=False)
 
-    def train_post_batch(self, delta):
+    def train_post_batch(self, model_fresh, data):
         delta_new = rpc.rpc_sync(
             self.ps_rref.owner(),
             EfficientAdamParameterServer.update_model,
-            args=(self.ps_rref, self.worker, delta),
+            args=(self.ps_rref, self.worker, data),
         )
         with torch.no_grad():
             for i, p in enumerate(self.model_old.parameters()):

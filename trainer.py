@@ -35,7 +35,7 @@ class Trainer(object):
             model_fresh.to(self.device)
             loss, data = self.train_pre_batch(i, model_fresh, inputs, labels)
             running_loss += loss.item()
-            self.train_post_batch(model_fresh=model_fresh, **data)
+            self.train_post_batch(model_fresh=model_fresh, data=data)
             if retrieve_model:
                 model_fresh = self.ps_rref.rpc_sync().get_model()
         return running_loss
@@ -44,7 +44,7 @@ class Trainer(object):
         self.thrd = rpc.rpc_sync(
             self.ps_rref.owner(),
             BatchUpdateParameterServer.update_model,
-            args=(self.ps_rref, self.worker, *data),
+            args=(self.ps_rref, self.worker, data),
         )
         timed_log(f'{self.name} received new thrd')
 

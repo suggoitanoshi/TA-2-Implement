@@ -12,8 +12,9 @@ class CADATrainer(Trainer):
         self.thrd = 0
 
     def train_pre_batch(self, i, model_fresh, inputs, labels):
-        loss, grad = super().train_pre_batch(
+        loss, data = super().train_pre_batch(
             i=i, model_fresh=model_fresh, inputs=inputs, labels=labels)
+        grad = data['grad']
         self.delay += 1
         if self.delay >= self.delay_bound:
             self.model_old = model_fresh
@@ -33,10 +34,10 @@ class CADATrainer(Trainer):
                 grad = None
         return loss, {"grad": grad}
 
-    def train_post_batch(self, grad):
+    def train_post_batch(self, model_fresh, data):
         self.thrd = rpc.rpc_sync(
             self.ps_rref.owner(),
             CADAParameterServer.update_model,
-            args=(self.ps_rref, self.worker, grad),
+            args=(self.ps_rref, self.worker, data),
         )
         timed_log(f'{self.name} received new thrd')

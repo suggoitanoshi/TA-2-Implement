@@ -25,14 +25,14 @@ class EfficientAdamParameterServer(BatchUpdateParameterServer):
 
     @ staticmethod
     @ rpc.functions.async_execution
-    def update_model(ps_rref, worker, delta_hat):
+    def update_model(ps_rref, worker, data):
         self = ps_rref.local_value()
         timed_log(
             f"PS got {self.curr_update_size+1}/{self.num_workers} updates")
         fut = self.future_model
         with self.lock:
             timed_log(f'PS got update from trainer{worker+1}')
-            self.delta_hat += delta_hat
+            self.delta_hat += data['delta']
             self.curr_update_size += 1
             if self.curr_update_size >= self.batch_update_size:
                 self.update_logic(fut)
