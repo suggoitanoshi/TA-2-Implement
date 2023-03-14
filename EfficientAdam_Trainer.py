@@ -6,8 +6,8 @@ from EfficientAdam_PS import EfficientAdamParameterServer
 
 
 class EfficientAdamTrainer(Trainer):
-    def __init__(self, ps_rref, worker, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, quantize=quantize):
-        super().__init__(ps_rref=ps_rref, worker=worker)
+    def __init__(self, ps_rref, worker, device, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, quantize=quantize):
+        super().__init__(ps_rref=ps_rref, worker=worker, device=device)
         self.learning_rate = learning_rate
         self.beta_1 = beta_1
         self.beta_2 = beta_2

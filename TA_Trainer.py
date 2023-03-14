@@ -5,8 +5,8 @@ from TA_PS import TAParameterServer
 
 
 class TATrainer(Trainer):
-    def __init__(self, ps_rref, worker, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, quantize=quantize, delay_bound=delay_bound):
-        super().__init__(ps_rref=ps_rref, worker=worker)
+    def __init__(self, ps_rref, worker, device, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, quantize=quantize, delay_bound=delay_bound):
+        super().__init__(ps_rref=ps_rref, worker=worker, device=device)
         self.learning_rate = learning_rate
         self.beta_1 = beta_1
         self.beta_2 = beta_2

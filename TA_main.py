@@ -8,7 +8,7 @@ from utils import *
 
 
 def run_trainer(ps_rref, worker):
-    trainer = TATrainer(ps_rref, worker)
+    trainer = TATrainer(ps_rref=ps_rref, worker=worker, device=devices[worker])
     trainer.train()
 
 def run_ps(trainers):

@@ -8,7 +8,7 @@ from utils import *
 
 
 def run_trainer(ps_rref, worker):
-    trainer = EfficientAdamTrainer(ps_rref, worker)
+    trainer = EfficientAdamTrainer(ps_rref=ps_rref, worker=worker, device=devices[worker])
     trainer.train()
 
 

@@ -5,7 +5,7 @@ batch_size = 200
 image_w = 64
 image_h = 64
 num_classes = 30
-batch_update_size = 1
+batch_update_size = 5
 num_batches = 1
 delay_bound = 50
 epochs = 5
@@ -14,7 +14,8 @@ beta_1 = 0.9
 beta_2 = 0.99
 c = 0.12*5
 dmax = 2
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device_count = torch.cuda.device_count()
+devices = [torch.device('cuda', i % device_count) if torch.cuda.is_available() else torch.device('cpu') for i in range(batch_update_size)]
 
 
 def timed_log(text):

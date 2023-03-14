@@ -5,8 +5,8 @@ from CADA_PS import CADAParameterServer
 
 
 class CADATrainer(Trainer):
-    def __init__(self, ps_rref, worker, delay_bound=delay_bound):
-        super().__init__(ps_rref=ps_rref, worker=worker)
+    def __init__(self, ps_rref, worker, device, delay_bound=delay_bound):
+        super().__init__(ps_rref=ps_rref, worker=worker, device=device)
         self.delay = 0
         self.delay_bound = delay_bound
         self.thrd = 0
