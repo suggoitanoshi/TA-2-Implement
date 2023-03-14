@@ -8,14 +8,16 @@ from utils import *
 
 
 def run_trainer(ps_rref, worker):
-    trainer = CADATrainer(ps_rref=ps_rref, worker=worker, device=devices[worker])
+    trainer = CADATrainer(ps_rref=ps_rref, worker=worker,
+                          device=devices[worker])
     trainer.train()
 
 
 def run_ps(trainers):
     timed_log("Start training")
-    ps_rref = rpc.RRef(CADAParameterServer())
+    ps_rref = rpc.RRef(CADAParameterServer(device=devices[0]))
     futs = []
+    all_epoch_data = []
     for e in range(epochs):
         timed_log(f'Start epoch {e+1}/{epochs}')
         for i, trainer in enumerate(trainers):
@@ -25,9 +27,18 @@ def run_ps(trainers):
         torch.futures.wait_all(futs)
         futs = []
         eval = ps_rref.rpc_sync().eval()
+        stats = ps_rref.rpc_sync().get_stats()
+        ps_rref.rpc_sync().reset_stats()
         loss = eval['loss']
         acc = eval['acc']
+        comms = stats['comms']
+        bits = stats['bits']
+        all_epoch_data.append({**eval, **stats})
         timed_log(f'Finished epoch {e+1}, loss: {loss}, acc: {acc}')
+        timed_log(
+            f'Current epoch communication rounds: {comms}, bits tranferred: {bits}')
+
+    write_stats('CADA.csv', all_epoch_data=all_epoch_data)
 
     timed_log("Finish training")
 

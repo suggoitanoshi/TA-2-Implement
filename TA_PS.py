@@ -18,22 +18,22 @@ class TAParameterServer(BatchUpdateParameterServer):
         delta_tilde = [self.quantize(delta_hat /
                                      self.num_workers) for delta_hat in self.delta_hat]
         for i, e in enumerate(self.error):
-            e = self.delta_hat[i] + e - delta_tilde[i]
-        for i, p in enumerate(self.model.parameters()):
-            p.add_(-delta_tilde[i])
+            e.add_(self.delta_hat[i] - delta_tilde[i])
+        with torch.no_grad():
+            for i, p in enumerate(self.model.parameters()):
+                p.add_(-delta_tilde[i])
         fut.set_result(delta_tilde)
 
-    @ staticmethod
-    @ rpc.functions.async_execution
-    def update_model(ps_rref, worker, data):
-        self = ps_rref.local_value()
-        timed_log(
-            f"PS got {self.curr_update_size+1}/{self.num_workers} updates")
+    def _update_model(self, worker, data):
         fut = self.future_model
         with self.lock:
             timed_log(f'PS got update from trainer{worker+1}')
             if data['delta'] is not None:
-                self.delta_hat += data['delta']
+                for i, delta in enumerate(data['delta']):
+                    self.delta_hat[i] += delta
+                self.add_comm_curr_epoch()
+                self.add_bits_curr_epoch(
+                    sum([delta.nelement() * delta.element_size() for delta in data['delta']]))
             self.curr_update_size += 1
             if self.curr_update_size >= self.batch_update_size:
                 self.update_logic(fut)

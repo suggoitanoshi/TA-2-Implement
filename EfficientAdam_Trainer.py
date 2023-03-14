@@ -24,7 +24,7 @@ class EfficientAdamTrainer(Trainer):
             i=i, model_fresh=model_fresh, inputs=inputs, labels=labels)
         grad = data['grad']
         delta = []
-        for layer, p in enumerate(self.model_old.parameters()):
+        for layer, p in enumerate(model_fresh.parameters()):
             v = self.beta_2 * \
                 self.momentum_dict[f'weight_v_{layer}'] + \
                 (1 - self.beta_2)*torch.norm(grad[layer], 2)
@@ -48,6 +48,6 @@ class EfficientAdamTrainer(Trainer):
             args=(self.ps_rref, self.worker, data),
         )
         with torch.no_grad():
-            for i, p in enumerate(self.model_old.parameters()):
+            for i, p in enumerate(model_fresh.parameters()):
                 p.add_(delta_new[i])
         timed_log(f'{self.name} received new delta')

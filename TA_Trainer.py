@@ -55,7 +55,7 @@ class TATrainer(Trainer):
             else:
                 delta = None
                 timed_log(f'{self.name} skip reporting delta')
-        return loss, {"delta": delta, "grad": grad}
+        return loss, {"delta": delta}
 
     def train(self):
         return super().train(retrieve_model=False)
@@ -67,6 +67,6 @@ class TATrainer(Trainer):
             args=(self.ps_rref, self.worker, data),
         )
         with torch.no_grad():
-            for i, p in enumerate(model_fresh.cpu().parameters()):
+            for i, p in enumerate(model_fresh.parameters()):
                 p.add_(delta_new[i])
         timed_log(f'{self.name} received new delta')

@@ -59,7 +59,7 @@ class BatchUpdateParameterServer(object):
         sorted_idx = sort_idx(trainset, num_classes)
         random.shuffle(sorted_idx)
         self.trainloader = []
-        nsample = 200
+        nsample = 400
         for i in range(num_workers):
             sampler = SubsetRandomSampler(
                 sorted_idx[i*nsample:(i+1)*nsample])
@@ -69,6 +69,8 @@ class BatchUpdateParameterServer(object):
             testset, batch_size=batch_size)
 
     def get_model(self):
+        self.add_bits_curr_epoch(sum(
+            [p.nelement() * p.element_size() for p in self.model.parameters()]))
         return self.model
 
     def get_trainloader(self, i):
@@ -85,6 +87,10 @@ class BatchUpdateParameterServer(object):
 
     def get_stats(self):
         return {"comms": self.comm_current_epoch, "bits": self.bits_current_epoch}
+
+    def reset_stats(self):
+        self.comm_current_epoch = 0
+        self.bits_current_epoch = 0
 
     def update_adam_params(self):
         diff = 0
