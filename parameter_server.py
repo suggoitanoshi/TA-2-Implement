@@ -14,7 +14,7 @@ from utils import *
 
 
 class BatchUpdateParameterServer(object):
-    def __init__(self, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2):
+    def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2):
         self.model = torchvision.models.resnet18(
             weights=ResNet18_Weights.DEFAULT)
         for p in self.model.parameters():
@@ -29,6 +29,9 @@ class BatchUpdateParameterServer(object):
         self.beta_2 = beta_2
         self.grad = [None for _ in range(num_workers)]
         self.first = True
+        self.comm_current_epoch = 0
+        self.bits_current_epoch = 0
+        self.device = device
 
         self.momentum_dict = {}
         for layer, _ in enumerate(self.model.parameters()):
