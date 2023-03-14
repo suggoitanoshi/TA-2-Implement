@@ -47,19 +47,3 @@ class Trainer(object):
             args=(self.ps_rref, self.worker, data),
         )
         timed_log(f'{self.name} received new thrd')
-
-    def eval_model(self, ps_rref):
-        timed_log(f'start evaluating model')
-        model = self.model_old
-        model.eval()
-        test_loss = 0
-        timed_log(f'request testloader')
-        test_loader = ps_rref.rpc_sync().get_testloader()
-        timed_log(f'finish request testloader, start evaluating')
-        with torch.no_grad():
-            for input, target in test_loader:
-                output = model(input)
-                test_loss += f.cross_entropy(output,
-                                             target, reduction='sum').item()
-        test_loss /= len(test_loader.dataset)
-        return test_loss

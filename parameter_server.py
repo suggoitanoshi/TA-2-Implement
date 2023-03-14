@@ -15,8 +15,7 @@ from utils import *
 
 class BatchUpdateParameterServer(object):
     def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2):
-        self.model = torchvision.models.resnet18(
-            weights=ResNet18_Weights.DEFAULT)
+        self.model = torchvision.models.resnet18()
         for p in self.model.parameters():
             p.grad = torch.zeros_like(p)
         self.lock = threading.Lock()
@@ -137,10 +136,7 @@ class BatchUpdateParameterServer(object):
 
     def eval(self):
         timed_log(f'start evaluating model')
-        self.model.eval()
         loss = 0
-        timed_log(f'request testloader')
-        timed_log(f'finish request testloader, start evaluating')
         correct = 0
         with torch.no_grad():
             self.model.to(self.device)
@@ -148,8 +144,8 @@ class BatchUpdateParameterServer(object):
                 output = self.model(input)
                 loss += f.cross_entropy(output,
                                         target, reduction='sum').item()
-                correct += (output == target).float().sum()
-        self.model.to('cpu')
+                _, pred = torch.max(output.data, 1)
+                correct += (pred == target).sum().item()
         loss /= len(self.testloader.dataset)
         acc = 100 * correct / len(self.testloader.dataset)
         return {"loss": loss, "acc": acc}
