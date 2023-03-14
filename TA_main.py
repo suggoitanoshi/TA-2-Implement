@@ -10,9 +10,6 @@ from utils import *
 def run_trainer(ps_rref, worker):
     trainer = TATrainer(ps_rref, worker)
     trainer.train()
-    if worker == 0:
-        return trainer.eval_model(ps_rref=ps_rref)
-
 
 def run_ps(trainers):
     timed_log("Start training")
@@ -25,9 +22,11 @@ def run_ps(trainers):
                 rpc.rpc_async(trainer, run_trainer, args=(ps_rref, i))
             )
         torch.futures.wait_all(futs)
-        loss = futs[0].value()
         futs = []
-        timed_log(f'Finished epoch {e+1}, loss: {loss}')
+        eval = ps_rref.rpc_sync().eval()
+        loss = eval['loss']
+        acc = eval['acc']
+        timed_log(f'Finished epoch {e+1}, loss: {loss}, acc: {acc}')
 
     timed_log("Finish training")
 

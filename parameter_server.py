@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader, SubsetRandomSampler
 import torchvision
 from torchvision.models.resnet import ResNet18_Weights
 from torchvision import transforms
+import torch.functional as f
 
 from utils import *
 
@@ -128,3 +129,22 @@ class BatchUpdateParameterServer(object):
                 self.curr_update_size = 0
                 self.future_model = torch.futures.Future()
         return fut
+
+    def eval(self):
+        timed_log(f'start evaluating model')
+        self.model.eval()
+        loss = 0
+        timed_log(f'request testloader')
+        timed_log(f'finish request testloader, start evaluating')
+        correct = 0
+        with torch.no_grad():
+            self.model.to(self.device)
+            for input, target in self.testloader:
+                output = self.model(input)
+                loss += f.cross_entropy(output,
+                                             target, reduction='sum').item()
+                correct += (output == target).float().sum()
+        self.model.to('cpu')
+        loss /= len(self.testloader.dataset)
+        acc = 100 * correct / len(self.testloader.dataset)
+        return {"loss": loss, "acc": acc}
