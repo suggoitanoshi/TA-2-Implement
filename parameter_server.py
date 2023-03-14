@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, SubsetRandomSampler
 import torchvision
 from torchvision.models.resnet import ResNet18_Weights
 from torchvision import transforms
-import torch.functional as f
+import torch.nn.functional as f
 
 from utils import *
 
@@ -27,7 +27,6 @@ class BatchUpdateParameterServer(object):
         self.learning_rate = learning_rate
         self.beta_1 = beta_1
         self.beta_2 = beta_2
-        self.grad = [None for _ in range(num_workers)]
         self.first = True
         self.comm_current_epoch = 0
         self.bits_current_epoch = 0
@@ -61,7 +60,7 @@ class BatchUpdateParameterServer(object):
         sorted_idx = sort_idx(trainset, num_classes)
         random.shuffle(sorted_idx)
         self.trainloader = []
-        nsample = 1000
+        nsample = 200
         for i in range(num_workers):
             sampler = SubsetRandomSampler(
                 sorted_idx[i*nsample:(i+1)*nsample])
@@ -78,6 +77,15 @@ class BatchUpdateParameterServer(object):
 
     def get_testloader(self):
         return self.testloader
+
+    def add_comm_curr_epoch(self):
+        self.comm_current_epoch += 1
+
+    def add_bits_curr_epoch(self, bits):
+        self.bits_current_epoch += bits
+
+    def get_stats(self):
+        return {"comms": self.comm_current_epoch, "bits": self.bits_current_epoch}
 
     def update_adam_params(self):
         diff = 0
@@ -121,16 +129,10 @@ class BatchUpdateParameterServer(object):
         self = ps_rref.local_value()
         timed_log(
             f"PS got {self.curr_update_size+1}/{self.num_workers} updates")
+        return self._update_model(worker, data)
+
+    def _update_model(self, worker, data):
         fut = self.future_model
-        with self.lock:
-            if data != None:
-                timed_log(f'PS got update from trainer{worker+1}')
-                self.grad[worker] = data['grad']
-            self.curr_update_size += 1
-            if self.curr_update_size >= self.batch_update_size:
-                self.update_logic(fut)
-                self.curr_update_size = 0
-                self.future_model = torch.futures.Future()
         return fut
 
     def eval(self):
@@ -145,7 +147,7 @@ class BatchUpdateParameterServer(object):
             for input, target in self.testloader:
                 output = self.model(input)
                 loss += f.cross_entropy(output,
-                                             target, reduction='sum').item()
+                                        target, reduction='sum').item()
                 correct += (output == target).float().sum()
         self.model.to('cpu')
         loss /= len(self.testloader.dataset)
