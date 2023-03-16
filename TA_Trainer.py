@@ -16,10 +16,10 @@ class TATrainer(Trainer):
         self.thrd = 0
 
         self.momentum_dict = {}
-        for layer, _ in enumerate(self.model_old.parameters()):
-            self.momentum_dict[f'weight_m_{layer}'] = 0
-            self.momentum_dict[f'weight_v_{layer}'] = 0
-            self.momentum_dict[f'error_{layer}'] = 0
+        for layer, p in enumerate(self.model_old.parameters()):
+            self.momentum_dict[f'weight_m_{layer}'] = torch.zeros_like(p)
+            self.momentum_dict[f'weight_v_{layer}'] = torch.zeros_like(p)
+            self.momentum_dict[f'error_{layer}'] = torch.zeros_like(p)
 
     def train_pre_batch(self, i, model_fresh, inputs, labels):
         loss, data = super().train_pre_batch(
@@ -39,17 +39,17 @@ class TATrainer(Trainer):
             if diff >= self.thrd:
                 timed_log(f'{self.name} reporting delta')
                 for layer, p in enumerate(model_fresh.cpu().parameters()):
-                    v = self.beta_2 * \
+                    v = self.momentum_dict[f'weight_v_{layer}'] = self.beta_2 * \
                         self.momentum_dict[f'weight_v_{layer}'] + \
                         (1 - self.beta_2)*torch.norm(grad[layer], 2)
-                    m = self.beta_1 * \
+                    vsqrt = torch.sqrt(v).add_(epsilon)
+                    m = self.momentum_dict[f'weight_m_{layer}'] = self.beta_1 * \
                         self.momentum_dict[f'weight_m_{layer}'] + \
                         (1 - self.beta_1)*torch.norm(grad[layer], 1)
                     d = self.quantize(self.learning_rate*m /
-                                      torch.sqrt(v) + self.momentum_dict[f'error_{layer}'])
-                    self.momentum_dict[f'error_{layer}'] = self.learning_rate * m / \
-                        torch.sqrt(v) + \
-                        self.momentum_dict[f'error_{layer}'] - d
+                                      vsqrt + self.momentum_dict[f'error_{layer}'])
+                    self.momentum_dict[f'error_{layer}'] += self.learning_rate * m / \
+                        vsqrt - d
                     delta.append(d)
                 self.delay = 0
             else:

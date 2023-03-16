@@ -14,10 +14,10 @@ class EfficientAdamTrainer(Trainer):
         self.quantize = quantize
 
         self.momentum_dict = {}
-        for layer, _ in enumerate(self.model_old.parameters()):
-            self.momentum_dict[f'weight_m_{layer}'] = 0
-            self.momentum_dict[f'weight_v_{layer}'] = 0
-            self.momentum_dict[f'error_{layer}'] = 0
+        for layer, p in enumerate(self.model_old.parameters()):
+            self.momentum_dict[f'weight_m_{layer}'] = torch.zeros_like(p)
+            self.momentum_dict[f'weight_v_{layer}'] = torch.zeros_like(p)
+            self.momentum_dict[f'error_{layer}'] = torch.zeros_like(p)
 
     def train_pre_batch(self, i, model_fresh, inputs, labels):
         loss, data = super().train_pre_batch(
@@ -25,16 +25,18 @@ class EfficientAdamTrainer(Trainer):
         grad = data['grad']
         delta = []
         for layer, p in enumerate(model_fresh.parameters()):
-            v = self.beta_2 * \
+            v = self.momentum_dict[f'weight_v_{layer}'] = self.beta_2 * \
                 self.momentum_dict[f'weight_v_{layer}'] + \
                 (1 - self.beta_2)*torch.norm(grad[layer], 2)
-            m = self.beta_1 * \
+            m = self.momentum_dict[f'weight_m_{layer}'] = self.beta_1 * \
                 self.momentum_dict[f'weight_m_{layer}'] + \
                 (1 - self.beta_1)*torch.norm(grad[layer], 1)
-            d = self.quantize(self.learning_rate*m /
-                              torch.sqrt(v) + self.momentum_dict[f'error_{layer}'])
-            self.momentum_dict[f'error_{layer}'] = self.learning_rate * m / \
-                torch.sqrt(v) + self.momentum_dict[f'error_{layer}'] - d
+            vsqrt = torch.sqrt(v).add_(epsilon)
+            error = self.momentum_dict[f'error_{layer}']
+            d = self.quantize(
+                m.mul(self.learning_rate).div_(vsqrt).add_(error))
+            self.momentum_dict[f'error_{layer}'].add_(
+                m.mul(self.learning_rate) .div_(vsqrt).add_(-d))
             delta.append(d)
         return loss, {"delta": delta}
 
