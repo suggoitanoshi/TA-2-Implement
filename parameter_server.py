@@ -6,7 +6,6 @@ from torch.distributed import rpc
 from torch.utils.data import DataLoader, SubsetRandomSampler
 
 import torchvision
-from torchvision.models.resnet import ResNet18_Weights
 from torchvision import transforms
 import torch.nn.functional as f
 
@@ -142,16 +141,16 @@ class BatchUpdateParameterServer(object):
 
     def eval(self):
         timed_log(f'start evaluating model')
-        loss = 0
-        correct = 0
         with torch.no_grad():
+            loss = 0
+            correct = 0
             self.model.to(self.device)
             for input, target in self.testloader:
                 output = self.model(input)
                 loss += f.cross_entropy(output,
                                         target, reduction='sum').item()
                 _, pred = torch.max(output.data, 1)
-                correct += (pred == target).sum().item()
+                correct += (pred == target).sum().float2().item()
         loss /= len(self.testloader.dataset)
         acc = 100 * correct / len(self.testloader.dataset)
         return {"loss": loss, "acc": acc}
