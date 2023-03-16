@@ -16,6 +16,7 @@ beta_1 = 0.9
 beta_2 = 0.99
 c = 0.12*5
 dmax = 2
+epsilon = 1e-6
 device_count = torch.cuda.device_count()
 devices = [torch.device('cuda', i % device_count) if torch.cuda.is_available(
 ) else torch.device('cpu') for i in range(batch_update_size)]
@@ -41,7 +42,7 @@ def sort_idx(dataset, num_classes):
 def quantize(v, num_bits=16):
     v_norm = torch.norm(v)
     if v_norm < 1e-10:
-        qv = 0
+        qv = torch.zeros_like(v)
     else:
         s = 2**(num_bits-1)
         l = torch.floor(torch.abs(v)/v_norm*s)
