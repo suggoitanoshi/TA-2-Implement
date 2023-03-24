@@ -18,6 +18,9 @@ beta_2 = 0.99
 c = 0.12*5
 dmax = 2
 epsilon = 1e-6
+
+MASTER_HOST = 'localhost'
+MASTER_PORT = '29501'
 device_count = torch.cuda.device_count()
 devices = [torch.device('cuda', i % device_count) if torch.cuda.is_available(
 ) else torch.device('cpu') for i in range(batch_update_size)]
@@ -53,15 +56,18 @@ def quantize(v, num_bits=16):
         qv = v_norm*torch.sign(v)*(l/s + l/s*(torch.rand_like(v) < p).float())
     return qv
 
+
 def write_stats_header(outfile, headers):
     with open(outfile, 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=headers[0].keys())
         writer.writeheader()
 
+
 def write_stats_iter(outfile, iter_data):
     with open(outfile, 'a', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=iter_data[0].keys())
         writer.writerow(iter_data)
+
 
 def write_stats(outfile, all_epoch_data):
     with open(outfile, 'w', newline='') as csvfile:

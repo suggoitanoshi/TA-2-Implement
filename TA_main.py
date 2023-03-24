@@ -43,8 +43,8 @@ def run_ps(trainers):
 
 
 def run(rank, world_size):
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '29500'
+    os.environ['MASTER_ADDR'] = MASTER_HOST
+    os.environ['MASTER_PORT'] = MASTER_PORT
     options = rpc.TensorPipeRpcBackendOptions(
         num_worker_threads=16,
         rpc_timeout=0  # infinite timeout
