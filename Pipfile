@@ -17,4 +17,4 @@ torchvision = {index = "pytorch", version="==0.14.1+cpu"}
 autopep8 = "*"
 
 [requires]
-python_version = "3.9"
+python_version = "3"
