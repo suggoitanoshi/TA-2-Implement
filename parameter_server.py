@@ -58,7 +58,6 @@ class BatchUpdateParameterServer(object):
         sorted_idx = sort_idx(trainset, num_classes)
         random.shuffle(sorted_idx)
         self.trainloader = []
-        nsample = 400
         for i in range(num_workers):
             sampler = SubsetRandomSampler(
                 sorted_idx[i*nsample:(i+1)*nsample])
@@ -150,7 +149,7 @@ class BatchUpdateParameterServer(object):
                 loss += f.cross_entropy(output,
                                         target, reduction='sum').item()
                 _, pred = torch.max(output.data, 1)
-                correct += (pred == target).sum().float2().item()
+                correct += (pred == target).sum().float().item()
         loss /= len(self.testloader.dataset)
         acc = 100 * correct / len(self.testloader.dataset)
         return {"loss": loss, "acc": acc}
