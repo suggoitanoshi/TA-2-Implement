@@ -8,7 +8,8 @@ from utils import *
 
 
 def run_trainer(ps_rref, worker):
-    trainer = EfficientAdamTrainer(ps_rref=ps_rref, worker=worker, device=devices[worker])
+    trainer = EfficientAdamTrainer(
+        ps_rref=ps_rref, worker=worker, device=devices[worker])
     trainer.train()
 
 
@@ -16,7 +17,8 @@ def run_ps(trainers):
     timed_log("Start training")
     ps_rref = rpc.RRef(EfficientAdamParameterServer(device=devices[0]))
     futs = []
-    all_epoch_data = []
+    stats_running_file = 'CADA.csv'
+    write_stats_header(stats_running_file, headers=headers)
     for e in range(epochs):
         timed_log(f'Start epoch {e+1}/{epochs}')
         for i, trainer in enumerate(trainers):
@@ -32,11 +34,12 @@ def run_ps(trainers):
         acc = eval['acc']
         comms = stats['comms']
         bits = stats['bits']
-        all_epoch_data.append({**eval, **stats})
+        current_iter = {**eval, **stats}
+        write_stats_iter(stats_running_file, current_iter)
         timed_log(f'Finished epoch {e+1}, loss: {loss}, acc: {acc}')
-        timed_log(f'Current epoch communication rounds: {comms}, bits tranferred: {bits}')
+        timed_log(
+            f'Current epoch communication rounds: {comms}, bits tranferred: {bits}')
 
-    write_stats('EfficientAdam.csv', all_epoch_data=all_epoch_data)
     timed_log("Finish training")
 
 
