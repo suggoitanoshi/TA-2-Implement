@@ -59,13 +59,13 @@ def quantize(v, num_bits=16):
 
 def write_stats_header(outfile, headers):
     with open(outfile, 'w', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=headers[0].keys())
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
         writer.writeheader()
 
 
 def write_stats_iter(outfile, iter_data):
     with open(outfile, 'a', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=iter_data[0].keys())
+        writer = csv.DictWriter(csvfile, fieldnames=iter_data.keys())
         writer.writerow(iter_data)
 
 
