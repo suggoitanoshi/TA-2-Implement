@@ -20,6 +20,7 @@ class CADATrainer(Trainer):
             self.model_old = model_fresh
             self.delay = 1
         else:
+            self.model_old.to(self.device)
             self.loss_fn(self.model_old(inputs), labels).backward()
             old_grad = [p.grad for p in self.model_old.cpu().parameters()]
             diff = [torch.norm(g - old_g)**2 for g,

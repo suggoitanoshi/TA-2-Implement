@@ -69,6 +69,7 @@ class BatchUpdateParameterServer(object):
     def get_model(self):
         self.add_bits_curr_epoch(sum(
             [p.nelement() * p.element_size() for p in self.model.parameters()]))
+        self.model.to('cpu')
         return self.model
 
     def get_trainloader(self, i):
