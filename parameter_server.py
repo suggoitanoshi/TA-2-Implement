@@ -69,7 +69,6 @@ class BatchUpdateParameterServer(object):
     def get_model(self):
         self.add_bits_curr_epoch(sum(
             [p.nelement() * p.element_size() for p in self.model.parameters()]))
-        self.model.to('cpu')
         return self.model
 
     def get_trainloader(self, i):
@@ -153,6 +152,7 @@ class BatchUpdateParameterServer(object):
                                         target, reduction='sum').item()
                 _, pred = torch.max(output.data, 1)
                 correct += (pred == target).sum().float().item()
+            self.model.to('cpu')
         loss /= len(self.testloader.dataset)
         acc = 100 * correct / len(self.testloader.dataset)
         return {"loss": loss, "acc": acc}
