@@ -33,6 +33,8 @@ class Trainer(object):
         running_loss = 0
         for i, (inputs, labels) in enumerate(self.trainloader):
             model_fresh.to(self.device)
+            inputs = inputs.to(self.device)
+            labels = labels.to(self.device)
             loss, data = self.train_pre_batch(i, model_fresh, inputs, labels)
             running_loss += loss.item()
             self.train_post_batch(model_fresh=model_fresh, data=data)

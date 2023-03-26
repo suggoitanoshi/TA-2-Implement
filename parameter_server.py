@@ -145,6 +145,8 @@ class BatchUpdateParameterServer(object):
             correct = 0
             self.model.to(self.device)
             for input, target in self.testloader:
+                input = input.to(self.device)
+                target = target.to(self.device)
                 output = self.model(input)
                 loss += f.cross_entropy(output,
                                         target, reduction='sum').item()
