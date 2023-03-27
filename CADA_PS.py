@@ -13,7 +13,7 @@ class CADAParameterServer(BatchUpdateParameterServer):
     def _update_model(self, worker, data):
         fut = self.future_model
         with self.lock:
-            if data is not None:
+            if data['grad'] is not None:
                 timed_log(f'PS got update from trainer{worker+1}')
                 self.grad[worker] = data['grad']
                 self.add_comm_curr_epoch()
