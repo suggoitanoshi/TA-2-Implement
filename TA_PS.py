@@ -33,7 +33,7 @@ class TAParameterServer(BatchUpdateParameterServer):
                     self.delta_hat[i] += delta
                 self.add_comm_curr_epoch()
                 self.add_bits_curr_epoch(
-                    sum([delta.nelement() * delta.element_size() for delta in data['delta']]))
+                    sum([delta.nelement() * delta.element_size() for delta in data['delta'] if delta is not None]))
             self.curr_update_size += 1
             if self.curr_update_size >= self.batch_update_size:
                 self.update_logic(fut)
