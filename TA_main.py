@@ -16,7 +16,7 @@ def run_ps(trainers):
     timed_log("Start training")
     ps_rref = rpc.RRef(TAParameterServer(device=devices[0]))
     futs = []
-    stats_running_file = 'CADA.csv'
+    stats_running_file = 'TA.csv'
     write_stats_header(stats_running_file, headers=headers)
     for e in range(epochs):
         timed_log(f'Start epoch {e+1}/{epochs}')
