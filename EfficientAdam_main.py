@@ -1,10 +1,17 @@
 import os
+import argparse
 
 import torch.multiprocessing as mp
 
 from EfficientAdam_PS import *
 from EfficientAdam_Trainer import *
 from utils import *
+
+parser = argparse.ArgumentParser(
+    description="ResNet 18 Training using CADA on CIFAR10")
+parser.add_argument("--resume", "-r", action="store_true",
+                    help="Resume from checkpoint")
+args = parser.parse_args()
 
 
 def run_trainer(ps_rref, worker):
@@ -15,10 +22,13 @@ def run_trainer(ps_rref, worker):
 
 def run_ps(trainers):
     timed_log("Start training")
-    ps_rref = rpc.RRef(EfficientAdamParameterServer(device=devices[0]))
+    checkpoint_file = 'CADA.pt'
+    ps_rref = rpc.RRef(EfficientAdamParameterServer(
+        device=devices[0], resume_file=(checkpoint_file if args.resume else '')))
     futs = []
     stats_running_file = 'EfficientAdam.csv'
-    write_stats_header(stats_running_file, headers=headers)
+    if not args.resume:
+        write_stats_header(stats_running_file, headers=headers)
     for e in range(epochs):
         timed_log(f'Start epoch {e+1}/{epochs}')
         for i, trainer in enumerate(trainers):
@@ -40,6 +50,8 @@ def run_ps(trainers):
         timed_log(
             f'Current epoch communication rounds: {comms}, bits tranferred: {bits}')
 
+    final_model = ps_rref.rpc_sync().get_model()
+    torch.save(final_model, checkpoint_file)
     timed_log("Finish training")
 
 
