@@ -51,7 +51,7 @@ def run_ps(trainers):
             f'Current epoch communication rounds: {comms}, bits tranferred: {bits}')
 
     final_model = ps_rref.rpc_sync().get_model()
-    torch.save(final_model, checkpoint_file)
+    torch.save(final_model.state_dict(), checkpoint_file)
     timed_log("Finish training")
 
 

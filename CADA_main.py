@@ -52,7 +52,7 @@ def run_ps(trainers):
 
     timed_log("Finish training")
     final_model = ps_rref.rpc_sync().get_model()
-    torch.save(final_model, checkpoint_file)
+    torch.save(final_model.state_dict(), checkpoint_file)
 
 
 def run(rank, world_size):
