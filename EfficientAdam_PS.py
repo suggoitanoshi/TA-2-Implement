@@ -25,8 +25,8 @@ class EfficientAdamParameterServer(BatchUpdateParameterServer):
             p -= delta_tilde[i]
         self.add_bits_curr_epoch(
             sum([delta.nelement() * delta.element_size() for delta in delta_tilde]))
-        self.delta_hat = [torch.zeros_like(p).to(
-            self.device) for p in self.model.parameters()]
+        self.delta_hat = [d.zero_() for d in self.delta_hat]
+        delta_tilde = [d.to('cpu') for d in delta_tilde]
         fut.set_result(delta_tilde)
 
     def _update_model(self, worker, data):
