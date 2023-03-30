@@ -15,8 +15,8 @@ class TAParameterServer(BatchUpdateParameterServer):
     @torch.no_grad()
     def update_logic(self, fut):
         timed_log(f'PS start update model')
-        delta_tilde = [self.quantize(delta_hat /
-                                     self.num_workers) for delta_hat in self.delta_hat]
+        delta_tilde = [self.quantize(delta_hat.to(self.device) /
+                                     self.num_workers, device=self.device) + self.error[i] for i, delta_hat in enumerate(self.delta_hat)]
         for i, e in enumerate(self.error):
             e.add_(self.delta_hat[i] - delta_tilde[i])
         with torch.no_grad():
@@ -30,7 +30,7 @@ class TAParameterServer(BatchUpdateParameterServer):
             timed_log(f'PS got update from trainer{worker+1}')
             if data['delta'] is not None:
                 for i, delta in enumerate(data['delta']):
-                    self.delta_hat[i] += delta
+                    self.delta_hat[i] = delta
                 self.add_comm_curr_epoch()
                 self.add_bits_curr_epoch(
                     sum([delta.nelement() * delta.element_size() for delta in data['delta'] if delta is not None]))

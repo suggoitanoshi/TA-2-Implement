@@ -35,7 +35,8 @@ class TATrainer(Trainer):
             self.delay = 1
         else:
             self.loss_fn(self.model_old(inputs), labels).backward()
-            old_grad = [p.grad for p in self.model_old.cpu().parameters()]
+            old_grad = [p.grad for p in self.model_old.to(
+                self.device).parameters()]
             diff = [torch.norm(g - old_g)**2 for g,
                     old_g in zip(grad, old_grad)]
             diff = sum(diff)
@@ -48,10 +49,10 @@ class TATrainer(Trainer):
                     vsqrt = torch.sqrt(v).add_(epsilon)
                     m = self.momentum_dict[f'weight_m_{layer}'] = self.beta_1 * self.momentum_dict[f'weight_m_{layer}'] + (
                         1 - self.beta_1)*torch.pow(grad[layer], 1)
-                    d = self.quantize(
-                        self.learning_rate*m/vsqrt + self.momentum_dict[f'error_{layer}'], device=self.device)
-                    self.momentum_dict[f'error_{layer}'] += self.learning_rate * m / \
-                        vsqrt - d
+                    d_raw = self.learning_rate*m/vsqrt + \
+                        self.momentum_dict[f'error_{layer}']
+                    d = self.quantize(d_raw, device=self.device)
+                    self.momentum_dict[f'error_{layer}'] += d_raw - d
                     delta.append(d.to('cpu'))
                 self.delay = 0
             else:
