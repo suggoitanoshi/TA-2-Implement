@@ -16,11 +16,11 @@ class EfficientAdamParameterServer(BatchUpdateParameterServer):
     def update_logic(self, fut):
         timed_log(f'PS start update model')
         delta_tilde = [self.quantize(delta_hat /
-                                     self.num_workers) for delta_hat in self.delta_hat]
+                                     self.num_workers) + self.error[i] for i, delta_hat in enumerate(self.delta_hat)]
         for i, e in enumerate(self.error):
             e.add_(self.delta_hat[i] - delta_tilde[i])
-        for i, p in enumerate(self.model.parameters()):
-            p.add_(-delta_tilde[i])
+        for i, p in enumerate(self.model.to(self.device).parameters()):
+            p -= delta_tilde[i]
         self.add_bits_curr_epoch(
             sum([delta.nelement() * delta.element_size() for delta in delta_tilde]))
         fut.set_result(delta_tilde)

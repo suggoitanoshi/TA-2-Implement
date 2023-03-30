@@ -37,10 +37,10 @@ class EfficientAdamTrainer(Trainer):
                     (1 - self.beta_1)*torch.pow(grad[layer], 1)
                 vsqrt = torch.sqrt(v).add_(epsilon)
                 error = self.momentum_dict[f'error_{layer}']
-                d = self.quantize(
-                    m.mul(self.learning_rate).div_(vsqrt).add_(error), device=self.device)
+                d_raw = m * self.learning_rate / vsqrt + error
+                d = self.quantize(d_raw, device=self.device)
                 self.momentum_dict[f'error_{layer}'].add_(
-                    m.mul(self.learning_rate) .div_(vsqrt).add_(-d))
+                    d_raw)
                 delta.append(d.to('cpu'))
         return loss, {"delta": delta}
 
@@ -55,5 +55,5 @@ class EfficientAdamTrainer(Trainer):
         )
         with torch.no_grad():
             for i, p in enumerate(model_fresh.to(self.device).parameters()):
-                p.add_(-delta_new[i].to(self.device))
+                p -= delta_new[i].to(self.device)
         timed_log(f'{self.name} received new delta')
