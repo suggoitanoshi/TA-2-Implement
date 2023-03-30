@@ -8,14 +8,16 @@ class EfficientAdamParameterServer(BatchUpdateParameterServer):
     def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, quantize=quantize, resume_file=''):
         super().__init__(device=device, batch_update_size=batch_update_size, num_workers=num_workers,
                          learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, resume_file=resume_file)
-        self.error = [torch.zeros_like(p) for p in self.model.parameters()]
-        self.delta_hat = [torch.zeros_like(p) for p in self.model.parameters()]
+        self.error = [torch.zeros_like(p).to(self.device)
+                      for p in self.model.parameters()]
+        self.delta_hat = [torch.zeros_like(p).to(
+            self.device) for p in self.model.parameters()]
         self.quantize = quantize
 
     @torch.no_grad()
     def update_logic(self, fut):
         timed_log(f'PS start update model')
-        delta_tilde = [self.quantize(delta_hat /
+        delta_tilde = [self.quantize(delta_hat.to(self.device) /
                                      self.num_workers, device=self.device) + self.error[i] for i, delta_hat in enumerate(self.delta_hat)]
         for i, e in enumerate(self.error):
             e.add_(self.delta_hat[i] - delta_tilde[i])
