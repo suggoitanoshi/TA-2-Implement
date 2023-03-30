@@ -40,7 +40,7 @@ class EfficientAdamTrainer(Trainer):
                 d_raw = m * self.learning_rate / vsqrt + error
                 d = self.quantize(d_raw, device=self.device)
                 self.momentum_dict[f'error_{layer}'].add_(
-                    d_raw)
+                    d_raw - d)
                 delta.append(d.to('cpu'))
         return loss, {"delta": delta}
 
