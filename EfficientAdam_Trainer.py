@@ -54,6 +54,6 @@ class EfficientAdamTrainer(Trainer):
             args=(self.ps_rref, self.worker, data),
         )
         with torch.no_grad():
-            for i, p in enumerate(model_fresh.parameters()):
+            for i, p in enumerate(model_fresh.to(self.device).parameters()):
                 p.add_(-delta_new[i].to(self.device))
         timed_log(f'{self.name} received new delta')
