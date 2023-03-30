@@ -41,13 +41,12 @@ class TATrainer(Trainer):
                 for layer, p in enumerate(model_fresh.cpu().parameters()):
                     v = self.momentum_dict[f'weight_v_{layer}'] = self.beta_2 * \
                         self.momentum_dict[f'weight_v_{layer}'] + \
-                        (1 - self.beta_2)*torch.norm(grad[layer], 2)
+                        (1 - self.beta_2)*torch.pow(grad[layer], 2)
                     vsqrt = torch.sqrt(v).add_(epsilon)
-                    m = self.momentum_dict[f'weight_m_{layer}'] = self.beta_1 * \
-                        self.momentum_dict[f'weight_m_{layer}'] + \
-                        (1 - self.beta_1)*torch.norm(grad[layer], 1)
-                    d = self.quantize(self.learning_rate*m /
-                                      vsqrt + self.momentum_dict[f'error_{layer}'])
+                    m = self.momentum_dict[f'weight_m_{layer}'] = self.beta_1 * self.momentum_dict[f'weight_m_{layer}'] + (
+                        1 - self.beta_1)*torch.pow(grad[layer], 1)
+                    d = self.quantize(
+                        self.learning_rate*m/vsqrt + self.momentum_dict[f'error_{layer}'])
                     self.momentum_dict[f'error_{layer}'] += self.learning_rate * m / \
                         vsqrt - d
                     delta.append(d)
@@ -68,5 +67,5 @@ class TATrainer(Trainer):
         )
         with torch.no_grad():
             for i, p in enumerate(model_fresh.parameters()):
-                p.add_(delta_new[i])
+                p.add_(-delta_new[i])
         timed_log(f'{self.name} received new delta')
