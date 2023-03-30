@@ -15,14 +15,17 @@ class EfficientAdamTrainer(Trainer):
 
         self.momentum_dict = {}
         for layer, p in enumerate(self.model_old.parameters()):
-            self.momentum_dict[f'weight_m_{layer}'] = torch.zeros_like(p)
-            self.momentum_dict[f'weight_v_{layer}'] = torch.zeros_like(p)
-            self.momentum_dict[f'error_{layer}'] = torch.zeros_like(p)
+            self.momentum_dict[f'weight_m_{layer}'] = torch.zeros_like(
+                p).to(self.device)
+            self.momentum_dict[f'weight_v_{layer}'] = torch.zeros_like(
+                p).to(self.device)
+            self.momentum_dict[f'error_{layer}'] = torch.zeros_like(
+                p).to(self.device)
 
     def train_pre_batch(self, i, model_fresh, inputs, labels):
         loss, data = super().train_pre_batch(
             i=i, model_fresh=model_fresh, inputs=inputs, labels=labels)
-        grad = data['grad']
+        grad = [grad.to(self.device) for grad in data['grad']]
         delta = []
         with torch.no_grad():
             for layer, p in enumerate(model_fresh.parameters()):
@@ -35,10 +38,10 @@ class EfficientAdamTrainer(Trainer):
                 vsqrt = torch.sqrt(v).add_(epsilon)
                 error = self.momentum_dict[f'error_{layer}']
                 d = self.quantize(
-                    m.mul(self.learning_rate).div_(vsqrt).add_(error))
+                    m.mul(self.learning_rate).div_(vsqrt).add_(error), device=self.device)
                 self.momentum_dict[f'error_{layer}'].add_(
                     m.mul(self.learning_rate) .div_(vsqrt).add_(-d))
-                delta.append(d)
+                delta.append(d.to('cpu'))
         return loss, {"delta": delta}
 
     def train(self):
@@ -52,5 +55,5 @@ class EfficientAdamTrainer(Trainer):
         )
         with torch.no_grad():
             for i, p in enumerate(model_fresh.parameters()):
-                p.add_(-delta_new[i])
+                p.add_(-delta_new[i].to(self.device))
         timed_log(f'{self.name} received new delta')

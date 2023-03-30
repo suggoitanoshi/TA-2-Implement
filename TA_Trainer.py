@@ -17,14 +17,17 @@ class TATrainer(Trainer):
 
         self.momentum_dict = {}
         for layer, p in enumerate(self.model_old.parameters()):
-            self.momentum_dict[f'weight_m_{layer}'] = torch.zeros_like(p)
-            self.momentum_dict[f'weight_v_{layer}'] = torch.zeros_like(p)
-            self.momentum_dict[f'error_{layer}'] = torch.zeros_like(p)
+            self.momentum_dict[f'weight_m_{layer}'] = torch.zeros_like(
+                p).to(self.device)
+            self.momentum_dict[f'weight_v_{layer}'] = torch.zeros_like(
+                p).to(self.device)
+            self.momentum_dict[f'error_{layer}'] = torch.zeros_like(
+                p).to(self.device)
 
     def train_pre_batch(self, i, model_fresh, inputs, labels):
         loss, data = super().train_pre_batch(
             i=i, model_fresh=model_fresh, inputs=inputs, labels=labels)
-        grad = data['grad']
+        grad = [grad.to(self.device) for grad in data['grad']]
         self.delay += 1
         delta = []
         if self.delay >= delay_bound:
@@ -38,7 +41,7 @@ class TATrainer(Trainer):
             diff = sum(diff)
             if diff >= self.thrd:
                 timed_log(f'{self.name} reporting delta')
-                for layer, p in enumerate(model_fresh.cpu().parameters()):
+                for layer in enumerate(model_fresh.parameters()):
                     v = self.momentum_dict[f'weight_v_{layer}'] = self.beta_2 * \
                         self.momentum_dict[f'weight_v_{layer}'] + \
                         (1 - self.beta_2)*torch.pow(grad[layer], 2)
@@ -49,7 +52,7 @@ class TATrainer(Trainer):
                         self.learning_rate*m/vsqrt + self.momentum_dict[f'error_{layer}'])
                     self.momentum_dict[f'error_{layer}'] += self.learning_rate * m / \
                         vsqrt - d
-                    delta.append(d)
+                    delta.append(d.to('cpu'))
                 self.delay = 0
             else:
                 delta = None
@@ -67,5 +70,5 @@ class TATrainer(Trainer):
         )
         with torch.no_grad():
             for i, p in enumerate(model_fresh.parameters()):
-                p.add_(-delta_new[i])
+                p.add_(-delta_new[i].to(self.device))
         timed_log(f'{self.name} received new delta')
