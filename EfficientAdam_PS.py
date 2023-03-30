@@ -16,7 +16,7 @@ class EfficientAdamParameterServer(BatchUpdateParameterServer):
     def update_logic(self, fut):
         timed_log(f'PS start update model')
         delta_tilde = [self.quantize(delta_hat /
-                                     self.num_workers) + self.error[i] for i, delta_hat in enumerate(self.delta_hat)]
+                                     self.num_workers, device=self.device) + self.error[i] for i, delta_hat in enumerate(self.delta_hat)]
         for i, e in enumerate(self.error):
             e.add_(self.delta_hat[i] - delta_tilde[i])
         for i, p in enumerate(self.model.to(self.device).parameters()):
