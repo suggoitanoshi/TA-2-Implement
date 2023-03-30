@@ -24,20 +24,21 @@ class EfficientAdamTrainer(Trainer):
             i=i, model_fresh=model_fresh, inputs=inputs, labels=labels)
         grad = data['grad']
         delta = []
-        for layer, p in enumerate(model_fresh.parameters()):
-            v = self.momentum_dict[f'weight_v_{layer}'] = self.beta_2 * \
-                self.momentum_dict[f'weight_v_{layer}'] + \
-                (1 - self.beta_2)*torch.norm(grad[layer], 2)
-            m = self.momentum_dict[f'weight_m_{layer}'] = self.beta_1 * \
-                self.momentum_dict[f'weight_m_{layer}'] + \
-                (1 - self.beta_1)*torch.norm(grad[layer], 1)
-            vsqrt = torch.sqrt(v).add_(epsilon)
-            error = self.momentum_dict[f'error_{layer}']
-            d = self.quantize(
-                m.mul(self.learning_rate).div_(vsqrt).add_(error))
-            self.momentum_dict[f'error_{layer}'].add_(
-                m.mul(self.learning_rate) .div_(vsqrt).add_(-d))
-            delta.append(d)
+        with torch.no_grad():
+            for layer, p in enumerate(model_fresh.parameters()):
+                v = self.momentum_dict[f'weight_v_{layer}'] = self.beta_2 * \
+                    self.momentum_dict[f'weight_v_{layer}'] + \
+                    (1 - self.beta_2)*torch.pow(grad[layer], 2)
+                m = self.momentum_dict[f'weight_m_{layer}'] = self.beta_1 * \
+                    self.momentum_dict[f'weight_m_{layer}'] + \
+                    (1 - self.beta_1)*torch.pow(grad[layer], 1)
+                vsqrt = torch.sqrt(v).add_(epsilon)
+                error = self.momentum_dict[f'error_{layer}']
+                d = self.quantize(
+                    m.mul(self.learning_rate).div_(vsqrt).add_(error))
+                self.momentum_dict[f'error_{layer}'].add_(
+                    m.mul(self.learning_rate) .div_(vsqrt).add_(-d))
+                delta.append(d)
         return loss, {"delta": delta}
 
     def train(self):
@@ -51,5 +52,5 @@ class EfficientAdamTrainer(Trainer):
         )
         with torch.no_grad():
             for i, p in enumerate(model_fresh.parameters()):
-                p.add_(delta_new[i])
+                p.add_(-delta_new[i])
         timed_log(f'{self.name} received new delta')

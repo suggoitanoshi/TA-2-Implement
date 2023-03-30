@@ -22,7 +22,7 @@ def run_trainer(ps_rref, worker):
 
 def run_ps(trainers):
     timed_log("Start training")
-    checkpoint_file = 'CADA.pt'
+    checkpoint_file = 'EfficientAdam.pt'
     ps_rref = rpc.RRef(EfficientAdamParameterServer(
         device=devices[0], resume_file=(checkpoint_file if args.resume else '')))
     futs = []
