@@ -153,8 +153,8 @@ class BatchUpdateParameterServer(object):
                 loss += f.cross_entropy(output,
                                         target, reduction='sum').item()
                 _, pred = torch.max(output.data, 1)
-                correct += (pred == target).sum().float().item()
+                correct += (pred == target).sum().item()
             self.model.to('cpu')
         loss /= len(self.testloader.dataset)
-        acc = 100 * correct / len(self.testloader.dataset)
+        acc = 100. * correct / len(self.testloader.dataset)
         return {"loss": loss, "acc": acc}
