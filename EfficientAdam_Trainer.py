@@ -29,6 +29,7 @@ class EfficientAdamTrainer(Trainer):
         delta = []
         with torch.no_grad():
             for layer, p in enumerate(model_fresh.parameters()):
+                p.grad.zero_()
                 v = self.momentum_dict[f'weight_v_{layer}'] = self.beta_2 * \
                     self.momentum_dict[f'weight_v_{layer}'] + \
                     (1 - self.beta_2)*torch.pow(grad[layer], 2)
