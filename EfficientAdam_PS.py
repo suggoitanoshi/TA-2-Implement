@@ -25,6 +25,8 @@ class EfficientAdamParameterServer(BatchUpdateParameterServer):
             p -= delta_tilde[i]
         self.add_bits_curr_epoch(
             sum([delta.nelement() * delta.element_size() for delta in delta_tilde]))
+        self.delta_hat = [torch.zeros_like(p).to(
+            self.device) for p in self.model.parameters()]
         fut.set_result(delta_tilde)
 
     def _update_model(self, worker, data):
@@ -32,7 +34,7 @@ class EfficientAdamParameterServer(BatchUpdateParameterServer):
         with self.lock:
             timed_log(f'PS got update from trainer{worker+1}')
             for i, delta in enumerate(data['delta']):
-                self.delta_hat[i] += delta
+                self.delta_hat[i] += delta.to(self.device)
             self.curr_update_size += 1
             self.add_comm_curr_epoch()
             self.add_bits_curr_epoch(
