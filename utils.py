@@ -45,10 +45,10 @@ def sort_idx(dataset, num_classes):
     return sorted_idx
 
 
-def quantize(v, num_bits=16):
+def quantize(v, device='cpu', num_bits=16):
     v_norm = torch.norm(v)
     if v_norm < 1e-10:
-        qv = torch.zeros_like(v)
+        qv = torch.zeros_like(v).to(device)
     else:
         s = 2**(num_bits-1)
         l = torch.floor(torch.abs(v)/v_norm*s)
