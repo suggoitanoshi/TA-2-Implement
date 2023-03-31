@@ -5,7 +5,7 @@ from parameter_server import BatchUpdateParameterServer
 
 
 class TAParameterServer(BatchUpdateParameterServer):
-    def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, quantize=quantize, resume_file=''):
+    def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, quantize=quantize, c=c, dmax=dmax, resume_file=''):
         super().__init__(device=device, batch_update_size=batch_update_size, num_workers=num_workers,
                          learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, resume_file=resume_file)
         self.error = [torch.zeros_like(p).to(self.device)
@@ -13,6 +13,8 @@ class TAParameterServer(BatchUpdateParameterServer):
         self.delta_hat = [torch.zeros_like(p).to(
             self.device) for p in self.model.parameters()]
         self.quantize = quantize
+        self.triggerlist = [0 for _ in range(dmax)]
+        self.thrd_scale = c/dmax
 
     @torch.no_grad()
     def update_logic(self, fut):
@@ -23,8 +25,15 @@ class TAParameterServer(BatchUpdateParameterServer):
             e.add_(self.delta_hat[i] - delta_tilde[i])
         for i, p in enumerate(self.model.to(self.device).parameters()):
             p.add_(-delta_tilde[i])
+        diff = torch.norm(delta_tilde, 2)
+        self.triggerlist.append(diff)
+        self.triggerlist.pop(0)
+        thrd = sum(self.triggerlist)*self.thrd_scale
         delta_tilde = [d.to('cpu') for d in delta_tilde]
-        fut.set_result(delta_tilde)
+        self.add_bits_curr_epoch(
+            sum([delta.nelement() * delta.element_size() for delta in delta_tilde]))
+        self.add_bits_curr_epoch(64)
+        fut.set_result({"delta_tilde": delta_tilde, "thrd": thrd})
 
     def _update_model(self, worker, data):
         fut = self.future_model

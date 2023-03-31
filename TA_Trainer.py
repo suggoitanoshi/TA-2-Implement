@@ -65,11 +65,13 @@ class TATrainer(Trainer):
         return super().train(retrieve_model=False)
 
     def train_post_batch(self, model_fresh, data):
-        delta_new = rpc.rpc_sync(
+        ret = rpc.rpc_sync(
             self.ps_rref.owner(),
             TAParameterServer.update_model,
             args=(self.ps_rref, self.worker, data),
         )
+        delta_new = ret['delta_tilde']
+        self.thrd = ret['thrd']
         with torch.no_grad():
             for i, p in enumerate(model_fresh.to(self.device).parameters()):
                 p.add_(-delta_new[i].to(self.device))
