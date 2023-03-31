@@ -8,8 +8,10 @@ class TAParameterServer(BatchUpdateParameterServer):
     def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, quantize=quantize, resume_file=''):
         super().__init__(device=device, batch_update_size=batch_update_size, num_workers=num_workers,
                          learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, resume_file=resume_file)
-        self.error = [torch.zeros_like(p).to(self.device) for p in self.model.parameters()]
-        self.delta_hat = [torch.zeros_like(p).to(self.device) for p in self.model.parameters()]
+        self.error = [torch.zeros_like(p).to(self.device)
+                      for p in self.model.parameters()]
+        self.delta_hat = [torch.zeros_like(p).to(
+            self.device) for p in self.model.parameters()]
         self.quantize = quantize
 
     @torch.no_grad()
@@ -19,9 +21,8 @@ class TAParameterServer(BatchUpdateParameterServer):
                                      self.num_workers, device=self.device) + self.error[i] for i, delta_hat in enumerate(self.delta_hat)]
         for i, e in enumerate(self.error):
             e.add_(self.delta_hat[i] - delta_tilde[i])
-        with torch.no_grad():
-            for i, p in enumerate(self.model.parameters()):
-                p.add_(-delta_tilde[i])
+        for i, p in enumerate(self.model.to(self.device).parameters()):
+            p.add_(-delta_tilde[i])
         fut.set_result(delta_tilde)
 
     def _update_model(self, worker, data):
@@ -30,7 +31,7 @@ class TAParameterServer(BatchUpdateParameterServer):
             timed_log(f'PS got update from trainer{worker+1}')
             if data['delta'] is not None:
                 for i, delta in enumerate(data['delta']):
-                    self.delta_hat[i] = delta
+                    self.delta_hat[i] = delta.to(self.device)
                 self.add_comm_curr_epoch()
                 self.add_bits_curr_epoch(
                     sum([delta.nelement() * delta.element_size() for delta in data['delta'] if delta is not None]))
