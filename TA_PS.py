@@ -26,7 +26,7 @@ class TAParameterServer(BatchUpdateParameterServer):
         diff = 0
         for i, p in enumerate(self.model.to(self.device).parameters()):
             p.add_(-delta_tilde[i])
-            diff += torch.norm(delta_tilde[i])**2
+            diff += torch.norm(delta_tilde[i]*self.learning_rate)**2
         self.triggerlist.append(diff)
         self.triggerlist.pop(0)
         thrd = sum(self.triggerlist)*self.thrd_scale
@@ -34,6 +34,7 @@ class TAParameterServer(BatchUpdateParameterServer):
         self.add_bits_curr_epoch(
             sum([delta.nelement() * delta.element_size() for delta in delta_tilde]))
         self.add_bits_curr_epoch(64)
+        self.delta_hat = [delta_hat.zero_() for delta_hat in self.delta_hat]
         fut.set_result({"delta_tilde": delta_tilde, "thrd": thrd.item()})
 
     def _update_model(self, worker, data):
@@ -42,7 +43,7 @@ class TAParameterServer(BatchUpdateParameterServer):
             timed_log(f'PS got update from trainer{worker+1}')
             if data['delta'] is not None:
                 for i, delta in enumerate(data['delta']):
-                    self.delta_hat[i] = delta.to(self.device)
+                    self.delta_hat[i] += delta.to(self.device)
                 self.add_comm_curr_epoch()
                 self.add_bits_curr_epoch(
                     sum([delta.nelement() * delta.element_size() for delta in data['delta'] if delta is not None]))
