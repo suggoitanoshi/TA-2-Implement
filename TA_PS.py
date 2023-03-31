@@ -8,8 +8,8 @@ class TAParameterServer(BatchUpdateParameterServer):
     def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, quantize=quantize, resume_file=''):
         super().__init__(device=device, batch_update_size=batch_update_size, num_workers=num_workers,
                          learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, resume_file=resume_file)
-        self.error = [torch.zeros_like(p) for p in self.model.parameters()]
-        self.delta_hat = [torch.zeros_like(p) for p in self.model.parameters()]
+        self.error = [torch.zeros_like(p).to(self.device) for p in self.model.parameters()]
+        self.delta_hat = [torch.zeros_like(p).to(self.device) for p in self.model.parameters()]
         self.quantize = quantize
 
     @torch.no_grad()
