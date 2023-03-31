@@ -26,10 +26,11 @@ class TAParameterServer(BatchUpdateParameterServer):
         diff = 0
         for i, p in enumerate(self.model.to(self.device).parameters()):
             p.add_(-delta_tilde[i])
-            diff += torch.norm(delta_tilde[i]*self.learning_rate)**2
+            diff += (torch.norm(delta_tilde[i]) *
+                     self.learning_rate)**2*self.thrd_scale
         self.triggerlist.append(diff)
         self.triggerlist.pop(0)
-        thrd = sum(self.triggerlist)*self.thrd_scale
+        thrd = sum(self.triggerlist)
         delta_tilde = [d.to('cpu') for d in delta_tilde]
         self.add_bits_curr_epoch(
             sum([delta.nelement() * delta.element_size() for delta in delta_tilde]))
