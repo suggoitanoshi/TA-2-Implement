@@ -26,7 +26,7 @@ class TAParameterServer(BatchUpdateParameterServer):
         diff = 0
         for i, p in enumerate(self.model.to(self.device).parameters()):
             p.add_(-delta_tilde[i])
-            diff += (torch.norm(delta_tilde[i]) *
+            diff += (torch.norm(self.delta_hat[i] + self.error[i]) *
                      self.learning_rate)**2*self.thrd_scale
         self.triggerlist.append(diff)
         self.triggerlist.pop(0)
