@@ -23,6 +23,7 @@ class TAParameterServer(BatchUpdateParameterServer):
             e.add_(self.delta_hat[i] - delta_tilde[i])
         for i, p in enumerate(self.model.to(self.device).parameters()):
             p.add_(-delta_tilde[i])
+        delta_tilde = [d.to('cpu') for d in delta_tilde]
         fut.set_result(delta_tilde)
 
     def _update_model(self, worker, data):
