@@ -25,7 +25,7 @@ class TAParameterServer(BatchUpdateParameterServer):
             e.add_(self.delta_hat[i] - delta_tilde[i])
         for i, p in enumerate(self.model.to(self.device).parameters()):
             p.add_(-delta_tilde[i])
-        diff = torch.sqrt(sum([d.pow(2) for d in delta_tilde]))
+        diff = sum(torch.norm(d)**2 for d in delta_tilde)
         self.triggerlist.append(diff)
         self.triggerlist.pop(0)
         thrd = sum(self.triggerlist)*self.thrd_scale
