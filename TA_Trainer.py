@@ -30,7 +30,7 @@ class TATrainer(Trainer):
         grad = [grad.to(self.device) for grad in data['grad']]
         self.delay += 1
         delta = []
-        if self.delay >= delay_bound:
+        if self.delay >= self.delay_bound:
             self.model_old = model_fresh
             self.delay = 1
             for layer, p in enumerate(model_fresh.parameters()):
