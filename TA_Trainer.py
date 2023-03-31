@@ -33,6 +33,19 @@ class TATrainer(Trainer):
         if self.delay >= delay_bound:
             self.model_old = model_fresh
             self.delay = 1
+            for layer, p in enumerate(model_fresh.parameters()):
+                p.grad.zero_()
+                v = self.momentum_dict[f'weight_v_{layer}'] = self.beta_2 * \
+                    self.momentum_dict[f'weight_v_{layer}'] + \
+                    (1 - self.beta_2)*torch.pow(grad[layer], 2)
+                vsqrt = torch.sqrt(v).add_(epsilon)
+                m = self.momentum_dict[f'weight_m_{layer}'] = self.beta_1 * self.momentum_dict[f'weight_m_{layer}'] + (
+                    1 - self.beta_1)*torch.pow(grad[layer], 1)
+                d_raw = self.learning_rate*m/vsqrt + \
+                    self.momentum_dict[f'error_{layer}']
+                d = self.quantize(d_raw, device=self.device)
+                self.momentum_dict[f'error_{layer}'] += d_raw - d
+                delta.append(d.to('cpu'))
         else:
             self.model_old.to(self.device)
             self.loss_fn(self.model_old(inputs), labels).backward()
