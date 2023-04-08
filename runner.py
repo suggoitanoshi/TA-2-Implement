@@ -24,6 +24,7 @@ def run_ps(trainers, PS, PS_args, Trainer, Trainer_args, stats_running_file, che
     for e in range(epochs):
         if e > 0 and e % 120 == 0:
             lr *= lr_decay
+            ps_rref.rpc_sync().set_learning_rate(lr)
         timed_log(f'Start epoch {e+1}/{epochs}')
         for i, trainer in enumerate(trainers):
             futs.append(

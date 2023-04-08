@@ -68,6 +68,9 @@ class BatchUpdateParameterServer(object):
         self.testloader = DataLoader(
             testset, batch_size=batch_size)
 
+    def set_learning_rate(self, new_lr):
+        self.learning_rate = new_lr
+
     def get_model(self):
         self.add_bits_curr_epoch(sum(
             [p.nelement() * p.element_size() for p in self.model.parameters()]))
