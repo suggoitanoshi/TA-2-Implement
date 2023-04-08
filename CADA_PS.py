@@ -3,9 +3,9 @@ from parameter_server import BatchUpdateParameterServer
 
 
 class CADAParameterServer(BatchUpdateParameterServer):
-    def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, c=c, dmax=dmax, resume_file=''):
+    def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, c=c, dmax=dmax, resume_file='', **kwargs):
         super().__init__(device=device, batch_update_size=batch_update_size, num_workers=num_workers,
-                         learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, resume_file=resume_file)
+                         learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, resume_file=resume_file, **kwargs)
         self.grad = [None for _ in range(num_workers)]
         self.triggerlist = [0 for _ in range(dmax)]
         self.thrd_scale = c/dmax

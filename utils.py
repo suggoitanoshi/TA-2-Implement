@@ -4,15 +4,16 @@ import logging
 import sys
 import csv
 
-batch_size = 1000
+batch_size = 10
 image_w = 64
 image_h = 64
 num_classes = 10
-batch_update_size = 5
+batch_update_size = 1
 nsample = 5000
 delay_bound = 50
 epochs = 50
 learning_rate = .01
+lr_decay = 0.5
 beta_1 = 0.9
 beta_2 = 0.99
 c = 0.12*5
