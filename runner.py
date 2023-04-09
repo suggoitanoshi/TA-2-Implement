@@ -57,7 +57,7 @@ def run_ps(trainers, PS, PS_args, Trainer, Trainer_args, stats_running_file, che
 
 def run(rank, world_size, PS, PS_args, Trainer, Trainer_args, stats_running_file, checkpoint_file, args):
     MASTER_ADDR = os.environ.get('MASTER_ADDR', 'localhost')
-    MASTER_PORT = os.environ.get('MASTER_PORT', portpicker.pick_unused_port())
+    MASTER_PORT = os.environ.get('MASTER_PORT', str(portpicker.pick_unused_port()))
     os.environ['MASTER_ADDR'] = MASTER_ADDR
     os.environ['MASTER_PORT'] = MASTER_PORT
     options = rpc.TensorPipeRpcBackendOptions(
