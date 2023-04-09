@@ -56,10 +56,6 @@ def run_ps(trainers, PS, PS_args, Trainer, Trainer_args, stats_running_file, che
 
 
 def run(rank, world_size, PS, PS_args, Trainer, Trainer_args, stats_running_file, checkpoint_file, args):
-    MASTER_ADDR = os.environ.get('MASTER_ADDR', 'localhost')
-    MASTER_PORT = os.environ.get('MASTER_PORT', str(portpicker.pick_unused_port()))
-    os.environ['MASTER_ADDR'] = MASTER_ADDR
-    os.environ['MASTER_PORT'] = MASTER_PORT
     options = rpc.TensorPipeRpcBackendOptions(
         num_worker_threads=4,
         rpc_timeout=0  # infinite timeout
@@ -87,6 +83,10 @@ def run(rank, world_size, PS, PS_args, Trainer, Trainer_args, stats_running_file
 
 
 def main(PS, PS_args, Trainer, Trainer_args, stats_running_file, checkpoint_file, args):
+    MASTER_ADDR = os.environ.get('MASTER_ADDR', 'localhost')
+    MASTER_PORT = os.environ.get('MASTER_PORT', str(portpicker.pick_unused_port()))
+    os.environ['MASTER_ADDR'] = MASTER_ADDR
+    os.environ['MASTER_PORT'] = MASTER_PORT
     world_size = batch_update_size + 1
     mp.spawn(run, args=(world_size, PS, PS_args, Trainer,
              Trainer_args, stats_running_file, checkpoint_file, args), nprocs=world_size, join=True)
