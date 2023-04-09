@@ -20,8 +20,6 @@ c = 0.12*5
 dmax = 2
 epsilon = 1e-6
 
-MASTER_HOST = 'localhost'
-MASTER_PORT = '29501'
 device_count = torch.cuda.device_count()
 devices = [torch.device('cuda', i % device_count) if torch.cuda.is_available(
 ) else torch.device('cpu') for i in range(batch_update_size)]
@@ -34,16 +32,6 @@ logger = logging.getLogger()
 
 def timed_log(text):
     logger.info(f"{datetime.now().strftime('%H:%M:%S')} {text}")
-
-
-def sort_idx(dataset, num_classes):
-    sorted = [[] for i in range(num_classes)]
-    for i in range(len(dataset)):
-        sorted[dataset[i][1]].append(i)
-    sorted_idx = []
-    for i in range(num_classes):
-        sorted_idx = sorted_idx + sorted[i]
-    return sorted_idx
 
 
 def quantize(v, device='cpu', num_bits=16):

@@ -2,6 +2,7 @@ import os
 
 import torch.multiprocessing as mp
 from torch.distributed import rpc
+import portpicker
 
 from utils import *
 
@@ -55,8 +56,10 @@ def run_ps(trainers, PS, PS_args, Trainer, Trainer_args, stats_running_file, che
 
 
 def run(rank, world_size, PS, PS_args, Trainer, Trainer_args, stats_running_file, checkpoint_file, args):
-    os.environ['MASTER_ADDR'] = MASTER_HOST
-    os.environ['MASTER_PORT'] = MASTER_PORT
+    MASTER_ADDR = os.environ['MASTER_ADDR']
+    MASTER_PORT = os.environ['MASTER_PORT']
+    os.environ['MASTER_ADDR'] = MASTER_ADDR if MASTER_ADDR != '' else 'localhost'
+    os.environ['MASTER_PORT'] = MASTER_PORT if MASTER_PORT != '' else portpicker.pick_unused_port()
     options = rpc.TensorPipeRpcBackendOptions(
         num_worker_threads=4,
         rpc_timeout=0  # infinite timeout
