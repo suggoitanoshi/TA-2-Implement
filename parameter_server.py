@@ -52,15 +52,11 @@ class BatchUpdateParameterServer(object):
                                  (0.2470, 0.2435, 0.2616)),
         ])
 
-        trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                                download=True, transform=transform_train)
+        self.trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
+                                                     download=True, transform=transform_train)
         testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                                download=True, transform=transform_test)
 
-        self.trainloader = []
-        for i in range(num_workers):
-            self.trainloader.append(DataLoader(
-                [trainset[i] for i in range(0, min(nsample*num_workers, len(trainset)), num_workers)], batch_size=batch_size))
         self.testloader = DataLoader(
             testset, batch_size=batch_size)
 
@@ -73,7 +69,7 @@ class BatchUpdateParameterServer(object):
         return self.model
 
     def get_trainloader(self, i):
-        return self.trainloader[i]
+        return DataLoader([self.trainset[j] for j in range(i, min(nsample*self.num_workers, len(self.trainset)), self.num_workers)], batch_size=batch_size)
 
     def get_testloader(self):
         return self.testloader
