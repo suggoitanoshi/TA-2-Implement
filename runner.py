@@ -58,7 +58,7 @@ def run(rank, world_size, PS, PS_args, Trainer, Trainer_args, stats_running_file
     os.environ['MASTER_ADDR'] = MASTER_HOST
     os.environ['MASTER_PORT'] = MASTER_PORT
     options = rpc.TensorPipeRpcBackendOptions(
-        num_worker_threads=16,
+        num_worker_threads=4,
         rpc_timeout=0  # infinite timeout
     )
     if rank != 0:
