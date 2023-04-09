@@ -59,10 +59,8 @@ class BatchUpdateParameterServer(object):
 
         self.trainloader = []
         for i in range(num_workers):
-            sampler = SubsetRandomSampler(
-                list(range(0, min(nsample*num_workers, len(trainset)), num_workers)))
             self.trainloader.append(DataLoader(
-                trainset, batch_size=batch_size, sampler=sampler))
+                [trainset[i] for i in range(0, min(nsample*num_workers, len(trainset)), num_workers)], batch_size=batch_size))
         self.testloader = DataLoader(
             testset, batch_size=batch_size)
 
@@ -102,11 +100,11 @@ class BatchUpdateParameterServer(object):
                 for i in range(self.num_workers):
                     buf += self.grad[i][layer] + param.data*epsilon
                 diff += (torch.norm(buf)*self.learning_rate)**2
-                self.momentum_dict[f'weight_q_{layer}'] = self.beta_1 *\
-                    self.momentum_dict[f'weight_q_{layer}'] +\
+                self.momentum_dict[f'weight_q_{layer}'] = self.beta_1 * \
+                    self.momentum_dict[f'weight_q_{layer}'] + \
                     (1-self.beta_1) * buf
-                self.momentum_dict[f'weight_v_{layer}'] = self.beta_2 *\
-                    self.momentum_dict[f'weight_v_{layer}'] +\
+                self.momentum_dict[f'weight_v_{layer}'] = self.beta_2 * \
+                    self.momentum_dict[f'weight_v_{layer}'] + \
                     (1 - self.beta_2) * (buf**2)
                 if self.first:
                     self.momentum_dict[f'weight_v_hat_{layer}'] = self.momentum_dict[f'weight_v_{layer}']
