@@ -4,11 +4,11 @@ import logging
 import sys
 import csv
 
-batch_size = 10
+batch_size = 100
 image_w = 64
 image_h = 64
 num_classes = 10
-batch_update_size = 1
+batch_update_size = 10
 nsample = 5000
 delay_bound = 50
 epochs = 50
