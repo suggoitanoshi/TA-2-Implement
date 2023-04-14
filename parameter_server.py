@@ -14,6 +14,7 @@ from utils import *
 
 class BatchUpdateParameterServer(object):
     def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, resume_file=''):
+        self.model = torchvision.models.resnet18()
         if resume_file != '':
             self.__deserialize(torch.load(resume_file))
         else:
@@ -140,10 +141,10 @@ class BatchUpdateParameterServer(object):
         return {"model": self.model.state_dict()}
 
     def __deserialize(self, data):
-        self.model = data['model']
+        self.model.load_state_dict(data['model'])
 
     def __initialize(self):
-        self.model = torchvision.models.resnet18()
+        pass
 
     def eval(self):
         timed_log(f'start evaluating model')
