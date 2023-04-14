@@ -23,7 +23,7 @@ def run_ps(trainers, PS, PS_args, Trainer, Trainer_args, stats_running_file, che
 
     lr = learning_rate
     for e in range(epochs):
-        if e > 0 and e % 120 == 0:
+        if e > 0 and e % 50 == 0:
             lr *= lr_decay
             ps_rref.rpc_sync().set_learning_rate(lr)
         timed_log(f'Start epoch {e+1}/{epochs}')
