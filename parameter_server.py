@@ -15,10 +15,6 @@ from utils import *
 class BatchUpdateParameterServer(object):
     def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, resume_file=''):
         self.model = torchvision.models.resnet18()
-        if resume_file != '':
-            self.__deserialize(torch.load(resume_file))
-        else:
-            self.__initialize()
         for p in self.model.parameters():
             p.grad = torch.zeros_like(p)
         self.lock = threading.Lock()
@@ -33,6 +29,11 @@ class BatchUpdateParameterServer(object):
         self.comm_current_epoch = 0
         self.bits_current_epoch = 0
         self.device = device
+
+        if resume_file != '':
+            self.__deserialize(torch.load(resume_file))
+        else:
+            self.__initialize()
 
         self.momentum_dict = {}
         for layer, _ in enumerate(self.model.parameters()):
