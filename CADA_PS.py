@@ -7,8 +7,8 @@ class CADAParameterServer(BatchUpdateParameterServer):
         super().__init__(device=device, batch_update_size=batch_update_size, num_workers=num_workers,
                          learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, resume_file=resume_file, **kwargs)
 
-    def __initialize(self):
-        super().__initialize()
+    def _initialize(self):
+        super()._initialize()
         self.grad = [None for _ in range(self.num_workers)]
         self.triggerlist = [0 for _ in range(dmax)]
         self.thrd_scale = c/dmax

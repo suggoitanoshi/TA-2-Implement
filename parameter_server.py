@@ -31,9 +31,9 @@ class BatchUpdateParameterServer(object):
         self.device = device
 
         if resume_file != '':
-            self.__deserialize(torch.load(resume_file))
+            self._deserialize(torch.load(resume_file))
         else:
-            self.__initialize()
+            self._initialize()
 
         self.momentum_dict = {}
         for layer, _ in enumerate(self.model.parameters()):
@@ -141,10 +141,10 @@ class BatchUpdateParameterServer(object):
     def serialize(self):
         return {"model": self.model.state_dict()}
 
-    def __deserialize(self, data):
+    def _deserialize(self, data):
         self.model.load_state_dict(data['model'])
 
-    def __initialize(self):
+    def _initialize(self):
         pass
 
     def eval(self):

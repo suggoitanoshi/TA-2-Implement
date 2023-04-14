@@ -10,8 +10,8 @@ class EfficientAdamParameterServer(BatchUpdateParameterServer):
                          learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, resume_file=resume_file, **kwargs)
         self.quantize = quantize
 
-    def __initialize(self):
-        super().__initialize()
+    def _initialize(self):
+        super()._initialize()
         self.error = [torch.zeros_like(p).to(self.device)
                       for p in self.model.parameters()]
         self.delta_hat = [torch.zeros_like(p).to(
@@ -35,8 +35,8 @@ class EfficientAdamParameterServer(BatchUpdateParameterServer):
     def serialize(self):
         return {**super().__deserialize, "error": self.error, "delta_hat": self.delta_hat}
 
-    def __deserialize(self, data):
-        super().__deserialize(data)
+    def _deserialize(self, data):
+        super()._deserialize(data)
         self.error = data['error']
         self.delta_hat = data['delta_hat']
 

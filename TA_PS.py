@@ -11,8 +11,8 @@ class TAParameterServer(BatchUpdateParameterServer):
         self.quantize = quantize
         self.thrd_scale = c/dmax
 
-    def __initialize(self):
-        super().__initialize()
+    def _initialize(self):
+        super()._initialize()
         self.error = [torch.zeros_like(p).to(self.device)
                       for p in self.model.parameters()]
         self.delta_hat = [torch.zeros_like(p).to(
@@ -45,8 +45,8 @@ class TAParameterServer(BatchUpdateParameterServer):
     def serialize(self):
         return {**super().serialize(), 'error': self.error, 'delta_hat': self.delta_hat, 'triggerlist': self.triggerlist}
 
-    def __deserialize(self, data):
-        super().__deserialize(data)
+    def _deserialize(self, data):
+        super()._deserialize(data)
         self.error = data['error']
         self.delta_hat = data['delta_hat']
         self.triggerlist = data['triggerlist']
