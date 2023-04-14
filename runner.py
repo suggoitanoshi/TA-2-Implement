@@ -47,12 +47,10 @@ def run_ps(trainers, PS, PS_args, Trainer, Trainer_args, stats_running_file, che
         timed_log(
             f'Current epoch communication rounds: {comms}, bits tranferred: {bits}')
         if e > 0 and e % 50 == 0:
-            torch.save(ps_rref.rpc_sync().get_model(
-            ).state_dict(), checkpoint_file)
+            torch.save(ps_rref.rpc_sync().serialize(), checkpoint_file)
 
     timed_log("Finish training")
-    final_model = ps_rref.rpc_sync().get_model()
-    torch.save(final_model.state_dict(), checkpoint_file)
+    torch.save(ps_rref.rpc_sync().serialize(), checkpoint_file)
 
 
 def run(rank, world_size, PS, PS_args, Trainer, Trainer_args, stats_running_file, checkpoint_file, args):
@@ -84,7 +82,8 @@ def run(rank, world_size, PS, PS_args, Trainer, Trainer_args, stats_running_file
 
 def main(PS, PS_args, Trainer, Trainer_args, stats_running_file, checkpoint_file, args):
     MASTER_ADDR = os.environ.get('MASTER_ADDR', 'localhost')
-    MASTER_PORT = os.environ.get('MASTER_PORT', str(portpicker.pick_unused_port()))
+    MASTER_PORT = os.environ.get(
+        'MASTER_PORT', str(portpicker.pick_unused_port()))
     os.environ['MASTER_ADDR'] = MASTER_ADDR
     os.environ['MASTER_PORT'] = MASTER_PORT
     world_size = batch_update_size + 1

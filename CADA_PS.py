@@ -6,7 +6,10 @@ class CADAParameterServer(BatchUpdateParameterServer):
     def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, c=c, dmax=dmax, resume_file='', **kwargs):
         super().__init__(device=device, batch_update_size=batch_update_size, num_workers=num_workers,
                          learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, resume_file=resume_file, **kwargs)
-        self.grad = [None for _ in range(num_workers)]
+
+    def __initialize(self):
+        super().__initialize()
+        self.grad = [None for _ in range(self.num_workers)]
         self.triggerlist = [0 for _ in range(dmax)]
         self.thrd_scale = c/dmax
 
@@ -25,6 +28,15 @@ class CADAParameterServer(BatchUpdateParameterServer):
                 self.curr_update_size = 0
                 self.future_model = torch.futures.Future()
         return fut
+
+    def serialize(self):
+        return {"model": self.model, "grad": self.grad, "triggerlist": self.triggerlist, "thrd": self.thrd}
+
+    def deserialize(self, data):
+        super().deserialize(data)
+        self.grad = data['grad']
+        self.triggerlist = data['triggerlist']
+        self.thrd = data['thrd']
 
     def update_logic(self, fut):
         timed_log(f'PS start update model')

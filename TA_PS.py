@@ -8,13 +8,16 @@ class TAParameterServer(BatchUpdateParameterServer):
     def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, quantize=quantize, c=c, dmax=dmax, resume_file='', **kwargs):
         super().__init__(device=device, batch_update_size=batch_update_size, num_workers=num_workers,
                          learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, resume_file=resume_file, **kwargs)
+        self.quantize = quantize
+        self.thrd_scale = c/dmax
+
+    def __initialize(self):
+        super().__initialize()
         self.error = [torch.zeros_like(p).to(self.device)
                       for p in self.model.parameters()]
         self.delta_hat = [torch.zeros_like(p).to(
             self.device) for p in self.model.parameters()]
-        self.quantize = quantize
         self.triggerlist = [0 for _ in range(dmax)]
-        self.thrd_scale = c/dmax
 
     @torch.no_grad()
     def update_logic(self, fut):
@@ -38,6 +41,15 @@ class TAParameterServer(BatchUpdateParameterServer):
         self.add_bits_curr_epoch(64)
         self.delta_hat = [delta_hat.zero_() for delta_hat in self.delta_hat]
         fut.set_result({"delta_tilde": delta_tilde, "thrd": thrd.item()})
+
+    def serialize(self):
+        return {**super().serialize(), 'error': self.error, 'delta_hat': self.delta_hat, 'triggerlist': self.triggerlist}
+
+    def __deserialize(self, data):
+        super().__deserialize(data)
+        self.error = data['error']
+        self.delta_hat = data['delta_hat']
+        self.triggerlist = data['triggerlist']
 
     def _update_model(self, worker, data):
         fut = self.future_model
