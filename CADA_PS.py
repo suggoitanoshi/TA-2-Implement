@@ -30,13 +30,12 @@ class CADAParameterServer(BatchUpdateParameterServer):
         return fut
 
     def serialize(self):
-        return {"model": self.model, "grad": self.grad, "triggerlist": self.triggerlist, "thrd": self.thrd}
+        return {"model": self.model, "grad": self.grad, "triggerlist": self.triggerlist}
 
     def deserialize(self, data):
         super().deserialize(data)
         self.grad = data['grad']
         self.triggerlist = data['triggerlist']
-        self.thrd = data['thrd']
 
     def update_logic(self, fut):
         timed_log(f'PS start update model')
