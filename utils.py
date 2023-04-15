@@ -1,5 +1,6 @@
 from datetime import datetime
 import torch
+from torchvision import transforms
 import logging
 import sys
 import csv
@@ -28,6 +29,20 @@ headers = ['loss', 'acc', 'comms', 'bits']
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger()
+
+transform_train = transforms.Compose([
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomCrop(32, padding=4),
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465),
+                         (0.2470, 0.2435, 0.2616)),
+])
+
+transform_test = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465),
+                         (0.2470, 0.2435, 0.2616)),
+])
 
 
 def timed_log(text):
@@ -63,3 +78,9 @@ def write_stats(outfile, all_epoch_data):
         writer = csv.DictWriter(csvfile, fieldnames=all_epoch_data[0].keys())
         writer.writeheader()
         writer.writerows(all_epoch_data)
+
+
+def collate_train(data):
+    imgs, labels = zip(*data)
+    imgs = torch.stack([transform_train(img) for img in imgs])
+    return imgs, torch.tensor(labels)

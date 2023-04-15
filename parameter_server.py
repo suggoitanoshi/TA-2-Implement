@@ -41,22 +41,8 @@ class BatchUpdateParameterServer(object):
             self.momentum_dict[f'weight_v_{layer}'] = 0
             self.momentum_dict[f'weight_v_hat_{layer}'] = 0
 
-        transform_train = transforms.Compose([
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomCrop(32, padding=4),
-            transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465),
-                                 (0.2470, 0.2435, 0.2616)),
-        ])
-
-        transform_test = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465),
-                                 (0.2470, 0.2435, 0.2616)),
-        ])
-
         self.trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                                     download=True, transform=transform_train)
+                                                     download=True,)
         testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                                download=True, transform=transform_test)
 
@@ -72,7 +58,7 @@ class BatchUpdateParameterServer(object):
         return self.model
 
     def get_trainloader(self, i):
-        return DataLoader([self.trainset[j] for j in range(i, min(nsample*self.num_workers, len(self.trainset)), self.num_workers)], batch_size=batch_size)
+        return DataLoader([self.trainset[j] for j in range(i, min(nsample*self.num_workers, len(self.trainset)), self.num_workers)], batch_size=batch_size, num_workers=0, collate_fn=collate_train)
 
     def get_testloader(self):
         return self.testloader
