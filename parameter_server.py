@@ -5,6 +5,7 @@ import torch
 from torch.distributed import rpc
 from torch.utils.data import DataLoader, SubsetRandomSampler
 
+from resnet import resnet20
 import torchvision
 from torchvision import transforms
 import torch.nn.functional as f
@@ -14,7 +15,7 @@ from utils import *
 
 class BatchUpdateParameterServer(object):
     def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, resume_file=''):
-        self.model = torchvision.models.resnet18()
+        self.model = resnet20()
         for p in self.model.parameters():
             p.grad = torch.zeros_like(p)
         self.lock = threading.Lock()
