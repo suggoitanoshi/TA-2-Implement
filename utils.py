@@ -84,3 +84,13 @@ def collate_train(data):
     imgs, labels = zip(*data)
     imgs = torch.stack([transform_train(img) for img in imgs])
     return imgs, torch.tensor(labels)
+
+
+def sort_idx(dataset, num_classes, num_samples):
+    sorted = [[] for i in range(num_classes)]
+    for i in range(num_samples):
+        sorted[dataset[i][1]].append(i)
+    sorted_idx = []
+    for i in range(num_classes):
+        sorted_idx = sorted_idx + sorted[i]
+    return sorted_idx

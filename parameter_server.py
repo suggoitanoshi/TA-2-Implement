@@ -44,6 +44,8 @@ class BatchUpdateParameterServer(object):
 
         self.trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                                      download=True,)
+        self.sorted_idx = random.shuffle(
+            sort_idx(self.trainset, num_classes, 50000))
         testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                                download=True, transform=transform_test)
 
@@ -59,7 +61,7 @@ class BatchUpdateParameterServer(object):
         return self.model
 
     def get_trainloader(self, i):
-        return DataLoader([self.trainset[j] for j in range(i, min(nsample*self.num_workers, len(self.trainset)), self.num_workers)], batch_size=batch_size, num_workers=0, collate_fn=collate_train)
+        return DataLoader([self.trainset[j] for j in range(i*nsample, (i+1)*nsample)], batch_size=batch_size, num_workers=0, collate_fn=collate_train)
 
     def get_testloader(self):
         return self.testloader
