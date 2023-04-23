@@ -33,12 +33,12 @@ class EfficientAdamParameterServer(BatchUpdateParameterServer):
         fut.set_result(delta_tilde)
 
     def serialize(self):
-        return {**super().__deserialize, "error": self.error, "delta_hat": self.delta_hat}
+        return {**super().serialize(), "error": [e.to('cpu') for e in self.error], "delta_hat": [d.to('cpu') for d in self.delta_hat]}
 
     def _deserialize(self, data):
         super()._deserialize(data)
-        self.error = data['error']
-        self.delta_hat = data['delta_hat']
+        self.error = [e.to(self.device) for e in data['error']]
+        self.delta_hat = [d.to(self.device) for d in data['delta_hat']]
 
     def _update_model(self, worker, data):
         fut = self.future_model

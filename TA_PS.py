@@ -43,12 +43,12 @@ class TAParameterServer(BatchUpdateParameterServer):
         fut.set_result({"delta_tilde": delta_tilde, "thrd": thrd.item()})
 
     def serialize(self):
-        return {**super().serialize(), 'error': self.error, 'delta_hat': self.delta_hat, 'triggerlist': self.triggerlist}
+        return {**super().serialize(), 'error': [e.to('cpu') for e in self.error], 'delta_hat': [d.to('cpu') for d in self.delta_hat], 'triggerlist': self.triggerlist}
 
     def _deserialize(self, data):
         super()._deserialize(data)
-        self.error = data['error']
-        self.delta_hat = data['delta_hat']
+        self.error = [e.to(self.device) for e in data['error']]
+        self.delta_hat = [d.to(self.device) for d in data['delta_hat']]
         self.triggerlist = data['triggerlist']
 
     def _update_model(self, worker, data):

@@ -128,7 +128,7 @@ class BatchUpdateParameterServer(object):
         return fut
 
     def serialize(self):
-        return {"model": self.model.state_dict()}
+        return {"model": self.model.to('cpu').state_dict()}
 
     def _deserialize(self, data):
         self.model.load_state_dict(data['model'])
