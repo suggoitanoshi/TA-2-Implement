@@ -88,4 +88,4 @@ def main(PS, PS_args, Trainer, Trainer_args, stats_running_file, checkpoint_file
     os.environ['MASTER_PORT'] = MASTER_PORT
     world_size = batch_update_size + 1
     mp.spawn(run, args=(world_size, PS, PS_args, Trainer,
-             Trainer_args, stats_running_file, checkpoint_file, args), nprocs=world_size, join=True)
+             Trainer_args, os.path.join('results', stats_running_file), os.path.join('results', checkpoint_file), args), nprocs=world_size, join=True)
