@@ -15,22 +15,30 @@ class TAParameterServer(BatchUpdateParameterServer):
         super()._initialize()
         self.error = [torch.zeros_like(p).to(self.device)
                       for p in self.model.parameters()]
-        self.delta_hat = [torch.zeros_like(p).to(
-            self.device) for p in self.model.parameters()]
+        self.delta_hat = [None for _ in range(self.num_workers)]
         self.triggerlist = [0 for _ in range(dmax)]
 
     @torch.no_grad()
     def update_logic(self, fut):
         timed_log(f'PS start update model')
-        delta_tilde = [self.quantize(delta_hat.to(self.device) /
-                                     self.num_workers, device=self.device) + self.error[i] for i, delta_hat in enumerate(self.delta_hat)]
-        for i, e in enumerate(self.error):
-            e.add_(self.delta_hat[i] - delta_tilde[i])
+        delta_hat_reduced = [torch.zeros_like(p).to(
+            self.device) for p in self.model.parameters()]
         diff = 0
-        epsilon = 1e-8
+        buf = 0
+        for i in range(self.num_workers):
+            for dhr, dh in zip(delta_hat_reduced, self.delta_hat[i]):
+                dhr += dh
+
+        delta_tilde = [self.quantize(delta_hat.to(self.device) /
+                                     self.num_workers, device=self.device) + self.error[i] for i, delta_hat in enumerate(delta_hat_reduced)]
+        for i, e in enumerate(self.error):
+            buf = 0
+            for j in range(self.num_workers):
+                buf += delta_hat_reduced[j][i] + e * epsilon
+            diff += (torch.norm(buf)*self.learning_rate)**2
+            e.add_(self.delta_hat[i] - delta_tilde[i])
         for i, p in enumerate(self.model.to(self.device).parameters()):
             p.add_(-delta_tilde[i])
-            diff += (torch.norm(self.delta_hat[i] / self.num_workers + self.error[i]) * self.learning_rate)**2*self.thrd_scale
         self.triggerlist.append(diff.item())
         self.triggerlist.pop(0)
         thrd = sum(self.triggerlist)
@@ -42,12 +50,13 @@ class TAParameterServer(BatchUpdateParameterServer):
         fut.set_result({"delta_tilde": delta_tilde, "thrd": thrd})
 
     def serialize(self):
-        return {**super().serialize(), 'error': [e.to('cpu') for e in self.error], 'delta_hat': [d.to('cpu') for d in self.delta_hat], 'triggerlist': self.triggerlist}
+        return {**super().serialize(), 'error': [e.to('cpu') for e in self.error], 'delta_hat': [[d.to('cpu') for d in delta_hat] for delta_hat in self.delta_hat], 'triggerlist': self.triggerlist}
 
     def _deserialize(self, data):
         super()._deserialize(data)
         self.error = [e.to(self.device) for e in data['error']]
-        self.delta_hat = [d.to(self.device) for d in data['delta_hat']]
+        self.delta_hat = [[d.to(self.device) for d in delta_hat]
+                          for delta_hat in data['delta_hat']]
         self.triggerlist = data['triggerlist']
 
     def _update_model(self, worker, data):
@@ -55,8 +64,8 @@ class TAParameterServer(BatchUpdateParameterServer):
         with self.lock:
             timed_log(f'PS got update from trainer{worker+1}')
             if data['delta'] is not None:
-                for i, delta in enumerate(data['delta']):
-                    self.delta_hat[i] += delta.to(self.device)
+                self.delta_hat[worker] = [
+                    d.to(self.device) for d in data['delta']]
                 self.add_comm_curr_epoch()
                 self.add_bits_curr_epoch(
                     sum([delta.nelement() * delta.element_size() for delta in data['delta'] if delta is not None]))
