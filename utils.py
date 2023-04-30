@@ -58,9 +58,10 @@ M = __construct_quant_M(-17, -11)
 
 @torch.no_grad()
 def quantize(v, device='cpu'):
-    x, y = torch.meshgrid(v.reshape(-1).to('cpu'), M, indexing='ij')
+    M.to(device)
+    x, y = torch.meshgrid(v.reshape(-1), M, indexing='ij')
     idx = torch.argmin(torch.abs(y - x), 1)
-    return M[idx].reshape(v.shape).clone().to(device)
+    return M[idx].reshape(v.shape).clone()
 
 
 def write_stats_header(outfile, headers):
