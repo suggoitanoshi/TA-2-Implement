@@ -20,7 +20,7 @@ class EfficientAdamTrainer(Trainer):
             self.momentum_dict[f'weight_v_{layer}'] = torch.zeros_like(
                 p).to(self.device)
             if kwargs['data'] is not None:
-                self.momentum_dict[f'error_{layer}'] = kwargs['data'][layer]
+                self.momentum_dict[f'error_{layer}'] = kwargs['data'][layer].to(self.device)
             else:
                 self.momentum_dict[f'error_{layer}'] = torch.zeros_like(
                     p).to(self.device)
@@ -50,7 +50,7 @@ class EfficientAdamTrainer(Trainer):
 
     def train(self):
         super().train(retrieve_model=False)
-        return [self.momentum_dict[f'error_{layer}'] for layer, _ in enumerate(self.model_old.parameters())]
+        return [self.momentum_dict[f'error_{layer}'].to('cpu') for layer, _ in enumerate(self.model_old.parameters())]
 
     def train_post_batch(self, model_fresh, data):
         delta_new = rpc.rpc_sync(
