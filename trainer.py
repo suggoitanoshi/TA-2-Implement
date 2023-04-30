@@ -8,7 +8,7 @@ from parameter_server import *
 
 
 class Trainer(object):
-    def __init__(self, ps_rref, worker, device):
+    def __init__(self, ps_rref, worker, device, **kwargs):
         self.ps_rref = ps_rref
         self.loss_fn = nn.CrossEntropyLoss()
         self.model_old = ps_rref.rpc_sync().get_model()
