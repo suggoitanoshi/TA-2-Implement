@@ -10,7 +10,7 @@ from utils import *
 def run_trainer(Trainer, ps_rref, worker, Trainer_args):
     trainer = Trainer(ps_rref=ps_rref, worker=worker,
                       device=devices[worker], **Trainer_args)
-    trainer.train()
+    return trainer.train()
 
 
 def run_ps(trainers, PS, PS_args, Trainer, Trainer_args, stats_running_file, checkpoint_file, args):
@@ -23,6 +23,7 @@ def run_ps(trainers, PS, PS_args, Trainer, Trainer_args, stats_running_file, che
 
     lr = learning_rate
     for e in range(epochs):
+        data = [None for _ in range(len(trainers))]
         if e > 0 and e % 50 == 0:
             lr *= lr_decay
             ps_rref.rpc_sync().set_learning_rate(lr)
@@ -30,9 +31,11 @@ def run_ps(trainers, PS, PS_args, Trainer, Trainer_args, stats_running_file, che
         for i, trainer in enumerate(trainers):
             futs.append(
                 rpc.rpc_async(trainer, run_trainer, args=(
-                    Trainer, ps_rref, i, Trainer_args))
+                    Trainer, ps_rref, i, {**Trainer_args, 'data': data[i]}))
             )
         torch.futures.wait_all(futs)
+        for i in range(len(trainers)):
+            data[i] = futs[i].value
         futs = []
         eval = ps_rref.rpc_sync().eval()
         stats = ps_rref.rpc_sync().get_stats()
