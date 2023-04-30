@@ -9,7 +9,7 @@ batch_size = 100
 image_w = 64
 image_h = 64
 num_classes = 10
-batch_update_size = 5
+batch_update_size = 1
 nsample = 5000
 delay_bound = 50
 epochs = 50
@@ -49,16 +49,18 @@ def timed_log(text):
     logger.info(f"{datetime.now().strftime('%H:%M:%S')} {text}")
 
 
-def quantize(v, device='cpu', num_bits=16):
-    v_norm = torch.norm(v)
-    if v_norm < 1e-10:
-        qv = torch.zeros_like(v).to(device)
-    else:
-        s = 2**(num_bits-1)
-        l = torch.floor(torch.abs(v)/v_norm*s)
-        p = torch.abs(v)/v_norm-l
-        qv = v_norm*torch.sign(v)*(l/s + l/s*(torch.rand_like(v) < p).float())
-    return qv
+def __construct_quant_M(k, K):
+    return torch.pow(torch.ones((K-k+1,))*2, torch.tensor(list(range(k, K+1))))
+
+
+M = __construct_quant_M(-17, -11)
+
+
+@torch.no_grad()
+def quantize(v, device='cpu'):
+    x, y = torch.meshgrid(v.reshape(-1), M, indexing='ij')
+    idx = torch.argmin(torch.abs(y - x), 1)
+    return M[idx].reshape(v.shape).clone().to(device)
 
 
 def write_stats_header(outfile, headers):

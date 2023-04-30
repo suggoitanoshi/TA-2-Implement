@@ -34,9 +34,9 @@ class TAParameterServer(BatchUpdateParameterServer):
         for i, e in enumerate(self.error):
             buf = 0
             for j in range(self.num_workers):
-                buf += delta_hat_reduced[j][i] + e * epsilon
+                buf += self.delta_hat[j][i] + e * epsilon
             diff += (torch.norm(buf)*self.learning_rate)**2
-            e.add_(self.delta_hat[i] - delta_tilde[i])
+            e.add_(delta_hat_reduced[i] - delta_tilde[i])
         for i, p in enumerate(self.model.to(self.device).parameters()):
             p.add_(-delta_tilde[i])
         self.triggerlist.append(diff.item())
@@ -46,7 +46,6 @@ class TAParameterServer(BatchUpdateParameterServer):
         self.add_bits_curr_epoch(
             sum([delta.nelement() * delta.element_size() for delta in delta_tilde]))
         self.add_bits_curr_epoch(64)
-        self.delta_hat = [delta_hat.zero_() for delta_hat in self.delta_hat]
         fut.set_result({"delta_tilde": delta_tilde, "thrd": thrd})
 
     def serialize(self):
