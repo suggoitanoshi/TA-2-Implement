@@ -20,9 +20,9 @@ class TATrainer(Trainer):
             self.v = [0 for _ in self.model_old.parameters()]
             self.e = [0 for _ in self.model_old.parameters()]
         else:
-            self.m = kwargs['data']['m']
-            self.v = kwargs['data']['v']
-            self.e = kwargs['data']['e']
+            self.m = [m.to(self.device) for m in kwargs['data']['m']]
+            self.v = [v.to(self.device) for v in kwargs['data']['v']]
+            self.e = [e.to(self.device) for e in kwargs['data']['e']]
 
     def train_pre_batch(self, i, model_fresh, inputs, labels):
         loss, data = super().train_pre_batch(
@@ -76,7 +76,7 @@ class TATrainer(Trainer):
 
     def train(self):
         super().train(retrieve_model=False)
-        return {'m': self.m, 'v': self.v, 'e': self.e}
+        return {'m': [m.to('cpu') for m in self.m], 'v': [v.to('cpu') for v in self.v], 'e': [e.to('cpu') for e in self.e]}
 
     def train_post_batch(self, model_fresh, data):
         ret = rpc.rpc_sync(

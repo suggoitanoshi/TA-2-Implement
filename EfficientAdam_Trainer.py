@@ -18,9 +18,9 @@ class EfficientAdamTrainer(Trainer):
             self.m = [0 for _ in self.model_old.parameters()]
             self.e = [0 for _ in self.model_old.parameters()]
         else:
-            self.v = kwargs['data']['v']
-            self.m = kwargs['data']['m']
-            self.e = kwargs['data']['e']
+            self.v = [v.to(self.device) for v in kwargs['data']['v']]
+            self.m = [m.to(self.device) for m in kwargs['data']['m']]
+            self.e = [e.to(self.device) for e in kwargs['data']['e']]
 
     def train_pre_batch(self, i, model_fresh, inputs, labels):
         loss, data = super().train_pre_batch(
@@ -46,7 +46,7 @@ class EfficientAdamTrainer(Trainer):
 
     def train(self):
         super().train(retrieve_model=False)
-        return {'v': self.v, 'm': self.m, 'e': self.e}
+        return {'v': [v.to('cpu') for v in self.v], 'm': [m.to('cpu') for m in self.m], 'e': [e.to('cpu') for e in self.e]}
 
     def train_post_batch(self, model_fresh, data):
         delta_new = rpc.rpc_sync(
