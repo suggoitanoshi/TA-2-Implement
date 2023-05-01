@@ -13,17 +13,14 @@ class EfficientAdamTrainer(Trainer):
         self.beta_2 = beta_2
         self.quantize = quantize
 
-        self.momentum_dict = {}
-        for layer, p in enumerate(self.model_old.parameters()):
-            self.momentum_dict[f'weight_m_{layer}'] = torch.zeros_like(
-                p).to(self.device)
-            self.momentum_dict[f'weight_v_{layer}'] = torch.zeros_like(
-                p).to(self.device)
-            if kwargs['data'] is not None:
-                self.momentum_dict[f'error_{layer}'] = kwargs['data'][layer].to(self.device)
-            else:
-                self.momentum_dict[f'error_{layer}'] = torch.zeros_like(
-                    p).to(self.device)
+        if kwargs['data'] is None:
+            self.v = [0 for _ in self.model_old.parameters()]
+            self.m = [0 for _ in self.model_old.parameters()]
+            self.e = [0 for _ in self.model_old.parameters()]
+        else:
+            self.v = kwargs['data']['v']
+            self.m = kwargs['data']['m']
+            self.e = kwargs['data']['e']
 
     def train_pre_batch(self, i, model_fresh, inputs, labels):
         loss, data = super().train_pre_batch(
@@ -33,24 +30,23 @@ class EfficientAdamTrainer(Trainer):
         with torch.no_grad():
             for layer, p in enumerate(model_fresh.parameters()):
                 p.grad.zero_()
-                v = self.momentum_dict[f'weight_v_{layer}'] = self.beta_2 * \
-                    self.momentum_dict[f'weight_v_{layer}'] + \
+                self.v[layer] = self.beta_2 * \
+                    self.v[layer] + \
                     (1 - self.beta_2)*torch.pow(grad[layer], 2)
-                m = self.momentum_dict[f'weight_m_{layer}'] = self.beta_1 * \
-                    self.momentum_dict[f'weight_m_{layer}'] + \
+                self.m[layer] = self.beta_1 * \
+                    self.m[layer] + \
                     (1 - self.beta_1)*torch.pow(grad[layer], 1)
-                vsqrt = torch.sqrt(v).add_(epsilon)
-                error = self.momentum_dict[f'error_{layer}']
-                d_raw = m * self.learning_rate / vsqrt + error
+                vsqrt = torch.sqrt(self.v[layer]).add_(epsilon)
+                error = self.e[layer]
+                d_raw = self.m[layer] * self.learning_rate / vsqrt + error
                 d = self.quantize(d_raw, device=self.device)
-                self.momentum_dict[f'error_{layer}'].add_(
-                    d_raw - d)
+                self.e[layer] += (d_raw - d)
                 delta.append(d.to('cpu'))
         return loss, {"delta": delta}
 
     def train(self):
         super().train(retrieve_model=False)
-        return [self.momentum_dict[f'error_{layer}'].to('cpu') for layer, _ in enumerate(self.model_old.parameters())]
+        return {'v': self.v, 'm': self.m, 'e': self.e}
 
     def train_post_batch(self, model_fresh, data):
         delta_new = rpc.rpc_sync(

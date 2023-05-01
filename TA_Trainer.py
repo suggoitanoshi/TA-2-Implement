@@ -15,14 +15,14 @@ class TATrainer(Trainer):
         self.delay_bound = delay_bound
         self.thrd = 0
 
-        self.momentum_dict = {}
-        for layer, p in enumerate(self.model_old.parameters()):
-            self.momentum_dict[f'weight_m_{layer}'] = torch.zeros_like(
-                p).to(self.device)
-            self.momentum_dict[f'weight_v_{layer}'] = torch.zeros_like(
-                p).to(self.device)
-            self.momentum_dict[f'error_{layer}'] = torch.zeros_like(
-                p).to(self.device)
+        if kwargs['data'] is None:
+            self.m = [0 for _ in self.model_old.parameters()]
+            self.v = [0 for _ in self.model_old.parameters()]
+            self.e = [0 for _ in self.model_old.parameters()]
+        else:
+            self.m = kwargs['data']['m']
+            self.v = kwargs['data']['v']
+            self.e = kwargs['data']['e']
 
     def train_pre_batch(self, i, model_fresh, inputs, labels):
         loss, data = super().train_pre_batch(
@@ -35,16 +35,16 @@ class TATrainer(Trainer):
             self.delay = 1
             for layer, p in enumerate(model_fresh.parameters()):
                 p.grad.zero_()
-                v = self.momentum_dict[f'weight_v_{layer}'] = self.beta_2 * \
-                    self.momentum_dict[f'weight_v_{layer}'] + \
+                self.v[layer] = self.beta_2 * \
+                    self.v[layer] + \
                     (1 - self.beta_2)*torch.pow(grad[layer], 2)
-                vsqrt = torch.sqrt(v).add_(epsilon)
-                m = self.momentum_dict[f'weight_m_{layer}'] = self.beta_1 * self.momentum_dict[f'weight_m_{layer}'] + (
+                vsqrt = torch.sqrt(self.v[layer]).add_(epsilon)
+                self.m[layer] = self.beta_1 * self.m[layer] + (
                     1 - self.beta_1)*torch.pow(grad[layer], 1)
-                d_raw = self.learning_rate*m/vsqrt + \
-                    self.momentum_dict[f'error_{layer}']
+                d_raw = self.learning_rate*self.m[layer]/vsqrt + \
+                    self.e[layer]
                 d = self.quantize(d_raw, device=self.device)
-                self.momentum_dict[f'error_{layer}'] += d_raw - d
+                self.e[layer] += d_raw - d
                 delta.append(d.to('cpu'))
         else:
             self.model_old.to(self.device)
@@ -57,16 +57,16 @@ class TATrainer(Trainer):
                 timed_log(f'{self.name} reporting delta')
                 for layer, p in enumerate(model_fresh.parameters()):
                     p.grad.zero_()
-                    v = self.momentum_dict[f'weight_v_{layer}'] = self.beta_2 * \
-                        self.momentum_dict[f'weight_v_{layer}'] + \
+                    self.v[layer] = self.beta_2 * \
+                        self.v[layer] + \
                         (1 - self.beta_2)*torch.pow(grad[layer], 2)
-                    vsqrt = torch.sqrt(v).add_(epsilon)
-                    m = self.momentum_dict[f'weight_m_{layer}'] = self.beta_1 * self.momentum_dict[f'weight_m_{layer}'] + (
+                    vsqrt = torch.sqrt(self.v[layer]).add_(epsilon)
+                    self.m[layer] = self.beta_1 * self.m[layer] + (
                         1 - self.beta_1)*torch.pow(grad[layer], 1)
-                    d_raw = self.learning_rate*m/vsqrt + \
-                        self.momentum_dict[f'error_{layer}']
+                    d_raw = self.learning_rate*self.m[layer]/vsqrt + \
+                        self.e[layer]
                     d = self.quantize(d_raw, device=self.device)
-                    self.momentum_dict[f'error_{layer}'] += d_raw - d
+                    self.e[layer] += d_raw - d
                     delta.append(d.to('cpu'))
                 self.delay = 0
             else:
@@ -75,7 +75,8 @@ class TATrainer(Trainer):
         return loss, {"delta": delta}
 
     def train(self):
-        return super().train(retrieve_model=False)
+        super().train(retrieve_model=False)
+        return {'m': self.m, 'v': self.v, 'e': self.e}
 
     def train_post_batch(self, model_fresh, data):
         ret = rpc.rpc_sync(

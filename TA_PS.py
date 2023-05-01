@@ -34,7 +34,7 @@ class TAParameterServer(BatchUpdateParameterServer):
         for i, e in enumerate(self.error):
             buf = 0
             for j in range(self.num_workers):
-                buf += self.delta_hat[j][i] + e * epsilon
+                buf += self.delta_hat[j][i] / self.num_workers + e * epsilon
             diff += (torch.norm(buf)*self.learning_rate)**2
             e.add_(delta_hat_reduced[i] - delta_tilde[i])
         for i, p in enumerate(self.model.to(self.device).parameters()):
