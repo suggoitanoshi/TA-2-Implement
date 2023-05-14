@@ -5,11 +5,11 @@ import logging
 import sys
 import csv
 
-batch_size = 100
+batch_size = 50
 image_w = 64
 image_h = 64
 num_classes = 10
-batch_update_size = 1
+batch_update_size = 10
 nsample = 5000
 delay_bound = 50
 epochs = 50
@@ -58,9 +58,9 @@ M = __construct_quant_M(-17, -11)
 
 @torch.no_grad()
 def quantize(v, device='cpu'):
-    __M = M.to(v.get_device())
+    __M = M.to(device)
     x, y = torch.meshgrid(v.reshape(-1), __M, indexing='ij')
-    idx = torch.argmin(torch.abs(y - x), 1)
+    idx = torch.argmin(torch.abs(x - y), 1)
     return __M[idx].reshape(v.shape).clone().to(device)
 
 
@@ -85,7 +85,9 @@ def write_stats(outfile, all_epoch_data):
 
 def collate_train(data):
     imgs, labels = zip(*data)
-    imgs = torch.stack([transform_train(img) for img in imgs])
+    # imgs = torch.stack([transform_train(img) for img in imgs])
+    to_tensor = transforms.ToTensor()
+    imgs = torch.stack([to_tensor(img) for img in imgs])
     return imgs, torch.tensor(labels)
 
 

@@ -45,8 +45,8 @@ class EfficientAdamTrainer(Trainer):
         return loss, {"delta": delta}
 
     def train(self):
-        super().train(retrieve_model=False)
-        return {'v': [v.to('cpu') for v in self.v], 'm': [m.to('cpu') for m in self.m], 'e': [e.to('cpu') for e in self.e]}
+        data = super().train(retrieve_model=False)
+        return {**data, 'data': {'v': [v.to('cpu') for v in self.v], 'm': [m.to('cpu') for m in self.m], 'e': [e.to('cpu') for e in self.e]}}
 
     def train_post_batch(self, model_fresh, data):
         delta_new = rpc.rpc_sync(

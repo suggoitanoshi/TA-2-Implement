@@ -75,8 +75,8 @@ class TATrainer(Trainer):
         return loss, {"delta": delta}
 
     def train(self):
-        super().train(retrieve_model=False)
-        return {'m': [m.to('cpu') for m in self.m], 'v': [v.to('cpu') for v in self.v], 'e': [e.to('cpu') for e in self.e]}
+        data = super().train(retrieve_model=False)
+        return {**data, 'data': {'m': [m.to('cpu') for m in self.m], 'v': [v.to('cpu') for v in self.v], 'e': [e.to('cpu') for e in self.e]}}
 
     def train_post_batch(self, model_fresh, data):
         ret = rpc.rpc_sync(

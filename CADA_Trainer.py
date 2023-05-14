@@ -35,6 +35,9 @@ class CADATrainer(Trainer):
                 grad = None
         return loss, {"grad": grad}
 
+    def train(self, **kwargs):
+        return {'data': None, **super().train(kwargs)}
+
     def train_post_batch(self, model_fresh, data):
         self.thrd = rpc.rpc_sync(
             self.ps_rref.owner(),

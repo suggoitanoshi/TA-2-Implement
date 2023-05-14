@@ -35,7 +35,7 @@ def run_ps(trainers, PS, PS_args, Trainer, Trainer_args, stats_running_file, che
             )
         torch.futures.wait_all(futs)
         for i in range(len(trainers)):
-            data[i] = futs[i].value
+            data[i] = futs[i].value()['data']
         futs = []
         eval = ps_rref.rpc_sync().eval()
         stats = ps_rref.rpc_sync().get_stats()

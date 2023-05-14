@@ -30,14 +30,17 @@ class Trainer(object):
         model_fresh = self.model_old
         timed_log(f'{self.name} start training')
         timed_log(f'{self.name} dataloader size: {len(self.trainloader)}')
+        running_loss = 0
         for i, (inputs, labels) in enumerate(self.trainloader):
             model_fresh.to(self.device)
             inputs = inputs.to(self.device)
             labels = labels.to(self.device)
-            _, data = self.train_pre_batch(i, model_fresh, inputs, labels)
+            loss, data = self.train_pre_batch(i, model_fresh, inputs, labels)
+            running_loss += loss
             self.train_post_batch(model_fresh=model_fresh, data=data)
             if retrieve_model:
                 model_fresh = self.ps_rref.rpc_sync().get_model()
+        return {'loss': running_loss}
 
     def train_post_batch(self, model_fresh, data):
         self.thrd = rpc.rpc_sync(

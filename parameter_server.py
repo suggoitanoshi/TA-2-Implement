@@ -6,6 +6,7 @@ from torch.distributed import rpc
 from torch.utils.data import DataLoader, SubsetRandomSampler
 
 from resnet import resnet20
+from fashion_mnist_model import FashionMnistNet
 import torchvision
 from torchvision import transforms
 import torch.nn.functional as f
@@ -15,7 +16,7 @@ from utils import *
 
 class BatchUpdateParameterServer(object):
     def __init__(self, device, batch_update_size=batch_update_size, num_workers=batch_update_size, learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, resume_file=''):
-        self.model = resnet20()
+        self.model = FashionMnistNet()
         for p in self.model.parameters():
             p.grad = torch.zeros_like(p)
         self.lock = threading.Lock()
@@ -42,12 +43,14 @@ class BatchUpdateParameterServer(object):
             self.momentum_dict[f'weight_v_{layer}'] = 0
             self.momentum_dict[f'weight_v_hat_{layer}'] = 0
 
-        self.trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                                     download=True,)
+        self.trainset = torchvision.datasets.FashionMNIST(root='./data', train=True,
+                                                          download=True,)
         self.sorted_idx = random.shuffle(
             sort_idx(self.trainset, num_classes, 50000))
-        testset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                               download=True, transform=transform_test)
+        testset = torchvision.datasets.FashionMNIST(root='./data', train=False,
+                                                    download=True,
+                                                    transform=transforms.ToTensor())
+        # transform=transform_test)
 
         self.testloader = DataLoader(
             testset, batch_size=batch_size)
