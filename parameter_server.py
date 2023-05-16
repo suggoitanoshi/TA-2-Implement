@@ -52,8 +52,7 @@ class BatchUpdateParameterServer(object):
                                                     transform=transforms.ToTensor())
         # transform=transform_test)
 
-        self.testloader = DataLoader(
-            testset, batch_size=batch_size)
+        self.testloader = DataLoader(testset)
 
     def set_learning_rate(self, new_lr):
         self.learning_rate = new_lr

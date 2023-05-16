@@ -36,7 +36,7 @@ class Trainer(object):
             inputs = inputs.to(self.device)
             labels = labels.to(self.device)
             loss, data = self.train_pre_batch(i, model_fresh, inputs, labels)
-            running_loss += loss
+            running_loss += loss.item()
             self.train_post_batch(model_fresh=model_fresh, data=data)
             if retrieve_model:
                 model_fresh = self.ps_rref.rpc_sync().get_model()
