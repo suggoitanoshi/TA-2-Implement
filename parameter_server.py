@@ -49,8 +49,7 @@ class BatchUpdateParameterServer(object):
             sort_idx(self.trainset, num_classes, 50000))
         testset = torchvision.datasets.FashionMNIST(root='./data', train=False,
                                                     download=True,
-                                                    transform=transforms.ToTensor())
-        # transform=transform_test)
+                                                    transform=transform_test)
 
         self.testloader = DataLoader(testset)
 

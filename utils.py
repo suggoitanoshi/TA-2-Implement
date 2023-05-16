@@ -32,16 +32,18 @@ logger = logging.getLogger()
 
 transform_train = transforms.Compose([
     transforms.RandomHorizontalFlip(),
-    transforms.RandomCrop(32, padding=4),
+    # transforms.RandomCrop(32, padding=4),
     transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465),
-                         (0.2470, 0.2435, 0.2616)),
+    # transforms.Normalize((0.4914, 0.4822, 0.4465),
+    #                      (0.2470, 0.2435, 0.2616)),
+    transforms.Normalize((0.1307), (0.3081))
 ])
 
 transform_test = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465),
-                         (0.2470, 0.2435, 0.2616)),
+    # transforms.Normalize((0.4914, 0.4822, 0.4465),
+    #                      (0.2470, 0.2435, 0.2616)),
+    transforms.Normalize((0.1307), (0.3081))
 ])
 
 
@@ -85,9 +87,7 @@ def write_stats(outfile, all_epoch_data):
 
 def collate_train(data):
     imgs, labels = zip(*data)
-    # imgs = torch.stack([transform_train(img) for img in imgs])
-    to_tensor = transforms.ToTensor()
-    imgs = torch.stack([to_tensor(img) for img in imgs])
+    imgs = torch.stack([transform_train(img) for img in imgs])
     return imgs, torch.tensor(labels)
 
 
