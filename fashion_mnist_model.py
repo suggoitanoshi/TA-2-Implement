@@ -14,7 +14,7 @@ class FashionMnistNet(nn.Module):
             in_channels=16, out_channels=32, kernel_size=5, stride=1, padding=2)
         self.elu2 = nn.ELU()
         self.maxpool2 = nn.MaxPool2d(kernel_size=2)
-        self.fc1 = nn.Linear(in_features=32*7*7, out_features=num_classes)
+        self.fc1 = nn.Linear(in_features=32*6*6, out_features=num_classes)
 
     def forward(self, x):
         out = self.conv1(x)
