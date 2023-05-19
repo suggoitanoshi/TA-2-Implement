@@ -23,7 +23,7 @@ class Trainer(object):
         timed_log(f"{self.name} processing batch ({i+1})")
         loss = self.loss_fn(model_fresh(inputs), labels)
         loss.backward()
-        grad = [p.grad for p in model_fresh.cpu().parameters()]
+        grad = [p.grad.clone() for p in model_fresh.cpu().parameters()]
         return loss, {"grad": grad}
 
     def train(self, retrieve_model=True):

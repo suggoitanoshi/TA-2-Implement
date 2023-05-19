@@ -33,6 +33,7 @@ class CADATrainer(Trainer):
             else:
                 timed_log(f'{self.name} skip reporting grads')
                 grad = None
+        [p.grad.zero_() for p in self.model_old.cpu().parameters()]
         return loss, {"grad": grad}
 
     def train(self, **kwargs):

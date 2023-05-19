@@ -87,7 +87,7 @@ class BatchUpdateParameterServer(object):
             for layer, param in enumerate(self.model.parameters()):
                 buf = 0
                 for i in range(self.num_workers):
-                    buf += self.grad[i][layer] + param.data*epsilon
+                    buf += self.grad[i][layer]
                 diff += (torch.norm(buf)*self.learning_rate)**2
                 self.momentum_dict[f'weight_q_{layer}'] = self.beta_1 * \
                     self.momentum_dict[f'weight_q_{layer}'] + \
