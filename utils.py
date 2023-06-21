@@ -25,7 +25,7 @@ device_count = torch.cuda.device_count()
 devices = [torch.device('cuda', i % device_count) if torch.cuda.is_available(
 ) else torch.device('cpu') for i in range(batch_update_size)]
 
-headers = ['loss', 'acc', 'comms', 'bits']
+headers = ['loss', 'acc', 'comms', 'bits', 'time']
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger()

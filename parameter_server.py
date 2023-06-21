@@ -44,7 +44,8 @@ class BatchUpdateParameterServer(object):
             self.momentum_dict[f'weight_v_hat_{layer}'] = 0
 
         self.trainset = torchvision.datasets.FashionMNIST(root='./data', train=True,
-                                                          download=True,)
+                                                          download=True,
+                                                          transform=transform_train)
         self.sorted_idx = random.shuffle(
             sort_idx(self.trainset, num_classes, 50000))
         testset = torchvision.datasets.FashionMNIST(root='./data', train=False,
@@ -52,6 +53,7 @@ class BatchUpdateParameterServer(object):
                                                     transform=transform_test)
 
         self.testloader = DataLoader(testset)
+        self.trainloader = [DataLoader(self.trainset, sampler=SubsetRandomSampler(range(i*nsample, (i+1)*nsample)), batch_size=batch_size) for i in range(self.num_workers)]
 
     def set_learning_rate(self, new_lr):
         self.learning_rate = new_lr
@@ -62,7 +64,7 @@ class BatchUpdateParameterServer(object):
         return self.model
 
     def get_trainloader(self, i):
-        return DataLoader([self.trainset[j] for j in range(i*nsample, (i+1)*nsample)], batch_size=batch_size, num_workers=0, collate_fn=collate_train)
+        return self.trainloader[i]
 
     def get_testloader(self):
         return self.testloader
@@ -148,7 +150,7 @@ class BatchUpdateParameterServer(object):
                 target = target.to(self.device)
                 output = self.model(input)
                 loss += f.cross_entropy(output,
-                                        target, reduction='sum').item()
+                                        target, reduction='sum').detach().item()
                 _, pred = torch.max(output.data, 1)
                 correct += (pred == target).sum().item()
             self.model.to('cpu')

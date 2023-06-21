@@ -3,6 +3,7 @@ import os
 import torch.multiprocessing as mp
 from torch.distributed import rpc
 import portpicker
+import time
 
 from utils import *
 
@@ -16,9 +17,9 @@ def run_trainer(Trainer, ps_rref, worker, Trainer_args):
 def run_ps(trainers, PS, PS_args, Trainer, Trainer_args, stats_running_file, checkpoint_file, args):
     timed_log("Start training")
     ps_rref = rpc.RRef(PS(
-        device=devices[0], resume_file=(checkpoint_file if args.resume else ''), **PS_args))
+        device=devices[0], resume_file=(checkpoint_file if args.get('resume') else ''), **PS_args))
     futs = []
-    if not args.resume:
+    if not args.get('resume'):
         write_stats_header(stats_running_file, headers=headers)
 
     lr = learning_rate
@@ -44,7 +45,7 @@ def run_ps(trainers, PS, PS_args, Trainer, Trainer_args, stats_running_file, che
         acc = eval['acc']
         comms = stats['comms']
         bits = stats['bits']
-        current_iter = {**eval, **stats}
+        current_iter = {**eval, **stats, 'time': time.time()}
         write_stats_iter(stats_running_file, current_iter)
         timed_log(f'Finished epoch {e+1}, loss: {loss}, acc: {acc}')
         timed_log(
